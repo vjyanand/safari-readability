@@ -3,7 +3,7 @@ var path = require('path');
 var webdriver = require('selenium-webdriver');
 var chromeCapabilities = webdriver.Capabilities.chrome();
 var chromeOptions = {
-  'args': ['--test-type', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security', '--user-data-dir=/tmp']
+  'args': ['--test-type', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security']
 };
 
 chromeCapabilities.set('chromeOptions', chromeOptions);
@@ -16,7 +16,6 @@ module.exports = function(url, cb) {
     }
 
     var driver = new webdriver.Builder()
-      .usingServer('http://localhost:4444/wd/hub')
       .withCapabilities(chromeCapabilities).build();
     try {
       driver.get(url);
