@@ -1,7 +1,6 @@
 var fs = require('fs');
 var path = require('path');
 var webdriver = require('selenium-webdriver');
-var crypto = require('crypto');
 var chromeCapabilities = webdriver.Capabilities.chrome();
 var chromeOptions = {
   'args': ['--test-type', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security']
@@ -43,5 +42,6 @@ module.exports = function(url, cb) {
       console.log("Driver quit on success");
       return cb(finalResult);
     });
+
   });
 }
