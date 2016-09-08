@@ -16,7 +16,6 @@ module.exports = function(url, cb) {
     }
 
     var driver = new webdriver.Builder()
-      .usingServer('http://localhost:4444/wd/hub')
       .withCapabilities(chromeCapabilities).build();
     try {
       driver.get(url);
