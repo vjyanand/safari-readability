@@ -23,6 +23,6 @@
   "homepage": "https://github.com/vjyanand/safari-readability#readme",
   "dependencies": {
     "forever": "^0.15.2",
-    "selenium-webdriver": "^2.53.3"
+    "selenium-webdriver": "^3.0.0-beta-2"
   }
 }
