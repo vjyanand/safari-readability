@@ -1,29 +1,47 @@
 /*
  * Copyright (c) 2010 Apple Inc. All rights reserved.
  */
+function hostnameMatchesHostKnownToContainEmbeddableMedia(e) {
+    const t = /^(.+\.)?(youtube\.com|vimeo\.com|dailymotion\.com|soundcloud\.com|mixcloud\.com)\.?$/;
+    return t.test(e)
+}
+function lazyLoadingAttributeToCloneForElement(e) {
+    const t = /(data:image\/)?gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==/,
+        n = {
+            "data-lazy-src": 1,
+            "data-original": 1,
+            datasrc: 1,
+            "data-src": 1,
+            "original-src": 1,
+            "rel:bf_image_src": 1,
+            "deferred-src": 1,
+            "data-mediaviewer-src": 1
+        };
+    for (var i = e.getAttribute("src"), r = /transparent|empty/i.test(i) || t.test(i), a = e.attributes, o = a.length, l = 0; o > l; ++l) {
+        var s = a[l].nodeName;
+        if (n[s.toLowerCase()])
+            return s;
+        if (r && /^data.*(src|source)$/i.test(s) && /\.(jpe?g|png|gif|bmp)$/i.test(a[s].value))
+            return s
+    }
+    return null
+}
 function characterNeedsScoreMultiplier(e) {
-    if (!e || e.length === 0)
+    if (!e || 0 === e.length)
         return !1;
     var t = e.charCodeAt(0);
-    return t > 11904 && t < 12031?!0 : t > 12352 && t < 12543?!0 : t > 12736 && t < 19903?!0 : t > 19968 && t < 40959?!0 : t > 44032 && t < 55215?!0 : t > 63744 && t < 64255?!0 : t > 65072 && t < 65103?!0 : t > 131072 && t < 173791?!0 : t > 194560 && t < 195103?!0 : !1
+    return t > 11904 && 12031 > t ? !0 : t > 12352 && 12543 > t ? !0 : t > 12736 && 19903 > t ? !0 : t > 19968 && 40959 > t ? !0 : t > 44032 && 55215 > t ? !0 : t > 63744 && 64255 > t ? !0 : t > 65072 && 65103 > t ? !0 : t > 131072 && 173791 > t ? !0 : t > 194560 && 195103 > t
 }
 function domDistance(e, t, n) {
-    var r = [], i = e;
-    while (i)
-        r.unshift(i), i = i.parentNode;
-    var s = [];
-    i = t;
-    while (i)
-        s.unshift(i), i = i.parentNode;
-    var o = Math.min(r.length, s.length), u = Math.abs(r.length - s.length);
-    for (var a = o; a >= 0; --a) {
-        if (r[a] === s[a])
-            break;
-        u += 2;
-        if (n && u >= n)
-            return n
-    }
-    return u
+    for (var i = [], r = e; r;)
+        i.unshift(r), r = r.parentNode;
+    var a = [];
+    for (r = t; r;)
+        a.unshift(r), r = r.parentNode;
+    for (var o = Math.min(i.length, a.length), l = Math.abs(i.length - a.length), s = o; s >= 0 && i[s] !== a[s]; --s)
+        if (l += 2, n && l >= n)
+            return n;
+    return l
 }
 function fontSizeFromComputedStyle(e, t) {
     var n = parseInt(e.fontSize);
@@ -34,49 +52,50 @@ function contentTextStyleForNode(e, t) {
         if (isNodeWhitespace(e))
             return null;
         var t = getComputedStyle(e.parentNode);
-        return t.float !== "none" ? null : t
+        return "none" !== t["float"] ? null : t
     }
-    var r = "descendant::text()[not(parent::h1) and not(parent::h2) and not(parent::h3) and not(parent::h4) and not(parent::h5) and not(parent::h6)]", i = e.evaluate(r, t, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), s = i.snapshotLength;
-    for (var o = 0; o < s; ++o) {
-        var u = i.snapshotItem(o), a=!1;
-        for (var f = u.parentElement; f !== t; f = f.parentElement)
-            if (NegativeRegEx.test(f.className)) {
-                a=!0;
+    for (var i = "descendant::text()[not(parent::h1) and not(parent::h2) and not(parent::h3) and not(parent::h4) and not(parent::h5) and not(parent::h6)]", r = e.evaluate(i, t, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), a = r.snapshotLength, o = 0; a > o; ++o) {
+        for (var l = r.snapshotItem(o), s = !1, c = l.parentElement; c !== t; c = c.parentElement)
+            if (NegativeRegEx.test(c.className)) {
+                s = !0;
                 break
             }
-        if (a)
-            continue;
-        var l = n(u);
-        if (l)
-            return l
+        if (!s) {
+            var u = n(l);
+            if (u)
+                return u
+        }
     }
     return null
 }
 function isNodeWhitespace(e) {
-    return !e || e.nodeType !== Node.TEXT_NODE?!1 : !/\S/.test(e.data)
+    return e && e.nodeType === Node.TEXT_NODE ? !/\S/.test(e.data) : !1
 }
 function removeWhitespace(e) {
     return e.replace(/\s+/g, "")
 }
 function isElementNode(e) {
-    return e && e.nodeType === Node.ELEMENT_NODE?!0 : !1
+    return !(!e || e.nodeType !== Node.ELEMENT_NODE)
 }
 function computedStyleIndicatesElementIsInvisibleDueToClipping(e) {
-    if (e.position !== "absolute")
+    if ("absolute" !== e.position)
         return !1;
     var t = e.clip.match(/^rect\((\d+px|auto), (\d+px|auto), (\d+px|auto), (\d+px|auto)\)$/);
-    if (!t || t.length !== 5)
+    if (!t || 5 !== t.length)
         return !1;
     var n = t.map(function(e) {
-        return parseInt(e)
-    }), r = n[1];
-    isNaN(r) && (r = 0);
-    var i = n[2], s = n[3], o = n[4];
-    return isNaN(o) && (o = 0), r >= s || i >= o
+            return parseInt(e)
+        }),
+        i = n[1];
+    isNaN(i) && (i = 0);
+    var r = n[2],
+        a = n[3],
+        o = n[4];
+    return isNaN(o) && (o = 0), i >= a || r >= o
 }
 function isElementVisible(e) {
     var t = getComputedStyle(e);
-    if (t.visibility !== "visible" || t.display === "none")
+    if ("visible" !== t.visibility || "none" === t.display)
         return !1;
     if (cachedElementBoundingRect(e).height)
         return !0;
@@ -85,132 +104,150 @@ function isElementVisible(e) {
 }
 function isElementPositionedOffScreen(e) {
     var t = cachedElementBoundingRect(e);
-    return !t.height ||!t.width?!1 : t.bottom <= 0 || t.right <= 0?!0 : !1
+    return t.height && t.width ? t.bottom <= 0 || t.right <= 0 : !1
 }
 function elementDepth(e) {
-    var t = 0;
-    for (; e; e = e.parentElement)
+    for (var t = 0; e; e = e.parentElement)
         t++;
     return t
 }
 function depthOfElementWithinElement(e, t) {
-    var n = 0;
-    for (; e !== t; e = e.parentElement)
-        n++;
+    for (var n = 0; e !== t; e = e.parentElement) {
+        if (!e)
+            return NaN;
+        n++
+    }
     return n
 }
-function nearestAncestorElementWithTagName(e, t) {
-    while (e = e.parentElement)
-        if (e.tagName === t)
-            return e;
+function nearestAncestorElementWithTagName(e, t, n) {
+    var i = {};
+    if (n)
+        for (var r = 0; r < n.length; ++r)
+            i[n[r]] = !0;
+    if (i[e.tagName])
+        return null;
+    for (; e = e.parentElement;) {
+        var a = e.tagName;
+        if (i[a])
+            break;
+        if (a === t)
+            return e
+    }
     return null
 }
 function cachedElementBoundingRect(e) {
     if (e._cachedElementBoundingRect)
         return e._cachedElementBoundingRect;
     var t = e.getBoundingClientRect();
-    return ReaderArticleFinderJS._elementsWithCachedBoundingRects.push(e), !ReaderArticleFinderJS._cachedScrollX&&!ReaderArticleFinderJS._cachedScrollY ? (e._cachedElementBoundingRect = t, e._cachedElementBoundingRect) : (e._cachedElementBoundingRect = {
+    return ReaderArticleFinderJS._elementsWithCachedBoundingRects.push(e), ReaderArticleFinderJS._cachedScrollX || ReaderArticleFinderJS._cachedScrollY ? (e._cachedElementBoundingRect = {
         top: t.top + ReaderArticleFinderJS._cachedScrollY,
         right: t.right + ReaderArticleFinderJS._cachedScrollX,
         bottom: t.bottom + ReaderArticleFinderJS._cachedScrollY,
         left: t.left + ReaderArticleFinderJS._cachedScrollX,
         width: t.width,
         height: t.height
-    }, e._cachedElementBoundingRect)
+    }, e._cachedElementBoundingRect) : (e._cachedElementBoundingRect = t, e._cachedElementBoundingRect)
 }
 function clearCachedElementBoundingRects() {
-    var e = ReaderArticleFinderJS._elementsWithCachedBoundingRects, t = e.length;
-    for (var n = 0; n < t; ++n)
+    for (var e = ReaderArticleFinderJS._elementsWithCachedBoundingRects, t = e.length, n = 0; t > n; ++n)
         e[n]._cachedElementBoundingRect = null;
     ReaderArticleFinderJS._elementsWithCachedBoundingRects = []
 }
-function innerTextOrTextContent(e) {
+function titleFromHeaderElement(e) {
     var t = e.innerText;
-    return /\S/.test(t) || (t = e.textContent), t
+    if (!/\S/.test(t))
+        return e.textContent.trim();
+    var n = getComputedStyle(e),
+        i = n.textTransform;
+    return "uppercase" === i || "lowercase" === i ? e.textContent.trim() : t.trim()
 }
 function levenshteinDistance(e, t) {
-    var n = e.length, r = t.length, i = new Array(n + 1);
-    for (var s = 0; s < n + 1; ++s)
-        i[s] = new Array(r + 1), i[s][0] = s;
-    for (var o = 0; o < r + 1; ++o)
-        i[0][o] = o;
-    for (var o = 1; o < r + 1; ++o)
-        for (var s = 1; s < n + 1; ++s)
-            if (e[s - 1] === t[o - 1])
-                i[s][o] = i[s - 1][o - 1];
+    for (var n = e.length, i = t.length, r = new Array(n + 1), a = 0; n + 1 > a; ++a)
+        r[a] = new Array(i + 1), r[a][0] = a;
+    for (var o = 0; i + 1 > o; ++o)
+        r[0][o] = o;
+    for (var o = 1; i + 1 > o; ++o)
+        for (var a = 1; n + 1 > a; ++a)
+            if (e[a - 1] === t[o - 1])
+                r[a][o] = r[a - 1][o - 1];
             else {
-                var u = i[s - 1][o] + 1, a = i[s][o - 1] + 1, f = i[s - 1][o - 1] + 1;
-                i[s][o] = Math.min(u, a, f)
+                var l = r[a - 1][o] + 1,
+                    s = r[a][o - 1] + 1,
+                    c = r[a - 1][o - 1] + 1;
+                r[a][o] = Math.min(l, s, c)
             }
-    return i[n][r]
+    return r[n][i]
 }
 function stringSimilarity(e, t) {
     var n = Math.max(e.length, t.length);
     return n ? (n - levenshteinDistance(e, t)) / n : 0
 }
 function stringsAreNearlyIdentical(e, t) {
-    return e === t?!0 : stringSimilarity(e, t) > StringSimilarityToDeclareStringsNearlyIdentical
+    return e === t ? !0 : stringSimilarity(e, t) > StringSimilarityToDeclareStringsNearlyIdentical
 }
 function elementIsCommentBlock(e) {
     if (/(^|\s)comment/.test(e.className))
         return !0;
     var t = e.getAttribute("id");
-    return t && t.indexOf("comment") === 0?!0 : !1
+    return !(!t || 0 !== t.indexOf("comment"))
 }
 function elementLooksLikeEmbeddedTweet(e) {
     const t = /http.+twitter.com.*status.*[0-9]+/i;
-    if (e.tagName !== "IFRAME")
+    if ("IFRAME" !== e.tagName)
         return !1;
     if (!e.contentDocument)
         return !1;
-    var n = e.contentDocument.documentElement, r = 0, i = n.querySelector("blockquote");
-    return i && t.test(i.getAttribute("cite"))&&++r, e.classList.contains("twitter-tweet")&&++r, n.querySelector("[data-iframe-title='Embedded Tweet']")&&++r, n.querySelector("[data-tweet-id]")&&++r, r > 2
+    var n = e.contentDocument.documentElement,
+        i = 0,
+        r = n.querySelector("blockquote");
+    return r && t.test(r.getAttribute("cite")) && ++i, e.classList.contains("twitter-tweet") && ++i, n.querySelector("[data-iframe-title='Embedded Tweet']") && ++i, n.querySelector("[data-tweet-id]") && ++i, i > 2
 }
 function elementLooksLikePartOfACarousel(e) {
-    const t = /carousel-|carousel_|-carousel|_carousel/, n = 3;
-    var r = e;
-    for (var i = 0; i < n; ++i) {
-        if (!r)
+    const t = /carousel-|carousel_|-carousel|_carousel/,
+        n = 3;
+    for (var i = e, r = 0; n > r; ++r) {
+        if (!i)
             return !1;
-        if (t.test(r.className) || t.test(r.getAttribute("data-analytics")))
+        if (t.test(i.className) || t.test(i.getAttribute("data-analytics")))
             return !0;
-        r = r.parentElement
+        i = i.parentElement
     }
 }
 function shouldPruneIframe(e, t) {
-    return HostnamesKnownToContainEmbeddableMediaRegex.test(anchorForURL(e.src, t).hostname)?!1 : elementLooksLikeEmbeddedTweet(e.originalElement)?!1 : !0
+    return e.srcdoc ? !0 : hostnameMatchesHostKnownToContainEmbeddableMedia(anchorForURL(e.src, t).hostname) ? !1 : !elementLooksLikeEmbeddedTweet(e.originalElement)
 }
 function languageScoreMultiplierForTextNodes(e) {
-    if (!e ||!e.length)
+    if (!e || !e.length)
         return 1;
-    var t = Math.min(e.length, DefaultNumberOfTextNodesToCheckForLanguageMultiplier), n = 0, r = 0;
-    for (var i = 0; i < t; i++) {
-        var s = e[i].nodeValue.trim(), o = Math.min(s.length, NumberOfCharactersPerTextNodeToEvaluateForLanguageMultiplier);
-        for (var u = 0; u < o; u++)
-            characterNeedsScoreMultiplier(s[u]) && n++;
-        r += o
+    for (var t = Math.min(e.length, DefaultNumberOfTextNodesToCheckForLanguageMultiplier), n = 0, i = 0, r = 0; t > r; r++) {
+        for (var a = e[r].nodeValue.trim(), o = Math.min(a.length, NumberOfCharactersPerTextNodeToEvaluateForLanguageMultiplier), l = 0; o > l; l++)
+            characterNeedsScoreMultiplier(a[l]) && n++;
+        i += o
     }
-    return n >= r * MinimumRatioOfCharactersForLanguageMultiplier ? ScoreMultiplierForChineseJapaneseKorean : 1
+    return n >= i * MinimumRatioOfCharactersForLanguageMultiplier ? ScoreMultiplierForChineseJapaneseKorean : 1
 }
 function scoreMultiplierForElementTagNameAndAttributes(e) {
-    var t = 1;
-    for (var n = e; n; n = n.parentElement) {
-        var r = n.getAttribute("id");
-        r && (ArticleRegEx.test(r) && (t += ArticleMatchBonus), CommentRegEx.test(r) && (t -= CommentMatchPenalty));
-        var i = n.className;
-        i && (ArticleRegEx.test(i) && (t += ArticleMatchBonus), CommentRegEx.test(i) && (t -= CommentMatchPenalty)), n.tagName === "ARTICLE" && (t += ArticleMatchBonus)
+    for (var t = 1, n = e; n; n = n.parentElement) {
+        var i = n.getAttribute("id");
+        i && (ArticleRegEx.test(i) && (t += ArticleMatchBonus), CommentRegEx.test(i) && (t -= CommentMatchPenalty), CarouselRegEx.test(i) && (t -= CarouselMatchPenalty));
+        var r = n.className;
+        r && (ArticleRegEx.test(r) && (t += ArticleMatchBonus), CommentRegEx.test(r) && (t -= CommentMatchPenalty), CarouselRegEx.test(r) && (t -= CarouselMatchPenalty)), "ARTICLE" === n.tagName && (t += ArticleMatchBonus)
     }
-    return t < 0 ? 0 : t
+    return 0 > t ? 0 : t
 }
 function elementAtPoint(e, t) {
-    if (typeof ReaderArticleFinderJSController != "undefined" && ReaderArticleFinderJSController.nodeAtPoint) {
+    if ("undefined" != typeof ReaderArticleFinderJSController && ReaderArticleFinderJSController.nodeAtPoint) {
         var n = ReaderArticleFinderJSController.nodeAtPoint(e, t);
         return n && n.nodeType !== Node.ELEMENT_NODE && (n = n.parentElement), n
     }
     return document.elementFromPoint(e, t)
 }
 function userVisibleURLString(e) {
-    return typeof ReaderArticleFinderJSController != "undefined" && ReaderArticleFinderJSController.userVisibleURLString ? ReaderArticleFinderJSController.userVisibleURLString(e) : e
+    return "undefined" != typeof ReaderArticleFinderJSController && ReaderArticleFinderJSController.userVisibleURLString ? ReaderArticleFinderJSController.userVisibleURLString(e) : e
+}
+function anchorRunsJavaScriptOnActivation(e) {
+    var t = e.href;
+    return "javascript:" === t.trim().substring(0, 11).toLowerCase()
 }
 function anchorForURL(e, t) {
     var n = t.createElement("a");
@@ -222,32 +259,37 @@ function anchorLinksToAttachment(e) {
 function anchorLinksToTagOrCategoryPage(e) {
     return /\bcategory|tag\b/i.test(e.getAttribute("rel"))
 }
+function anchorLooksLikeDownloadFlashLink(e) {
+    return /^https?:\/\/(www\.|get\.)(adobe|macromedia)\.com\/(((products|[a-zA-Z]{1,2}|)\/flashplayer|flashplayer|go\/getflash(player)?)|(shockwave\/download\/download.cgi\?P1_Prod_Version=ShockwaveFlash)\/?$)/i.test(e.href)
+}
 function elementsHaveSameTagAndClassNames(e, t) {
     return e.tagName === t.tagName && e.className === t.className
 }
 function selectorForElement(e) {
-    var t = e.tagName, n = e.classList, r = n.length;
-    for (var i = 0; i < r; i++)
-        t += "." + n[i];
+    for (var t = e.tagName, n = e.classList, i = n.length, r = 0; i > r; r++)
+        t += "." + n[r];
     return t
 }
 function elementFingerprintForDepth(e, t) {
-    function s(e, t) {
+    function n(e, t) {
         if (!e)
             return "";
         var o = [];
         o.push(selectorForElement(e));
-        var u = e.children, a = u.length;
-        if (a && t > 0) {
-            o.push(n);
-            for (var f = 0; f < a; ++f)
-                o.push(s(u[f], t - 1)), f !== a - 1 && o.push(i);
+        var l = e.children,
+            s = l.length;
+        if (s && t > 0) {
+            o.push(i);
+            for (var c = 0; s > c; ++c)
+                o.push(n(l[c], t - 1)), c !== s - 1 && o.push(a);
             o.push(r)
         }
         return o.join("")
     }
-    const n = " / ", r = " \\", i = " | ";
-    return s(e, t)
+    const i = " / ",
+        r = " \\",
+        a = " | ";
+    return n(e, t)
 }
 function childrenOfParentElement(e) {
     var t = e.parentElement;
@@ -265,12 +307,227 @@ function arrayOfKeysAndValuesOfObjectSortedByValueDescending(e) {
     }), t
 }
 function walkElementSubtree(e, t, n) {
-    if (t < 0)
-        return;
-    var r = e.children, i = r.length, s = t - 1;
-    for (var o = 0; o < i; ++o)
-        walkElementSubtree(r[o], s, n);
-    n(e, t)
+    if (!(0 > t)) {
+        for (var i = e.children, r = i.length, a = t - 1, o = 0; r > o; ++o)
+            walkElementSubtree(i[o], a, n);
+        n(e, t)
+    }
+}
+function elementIndicatesItIsASchemaDotOrgArticleContainer(e) {
+    var t = e.getAttribute("itemtype");
+    return /^https?:\/\/schema\.org\/(News)?Article$/.test(t)
+}
+function cleanStyleAndClassList(e) {
+    e.classList.length || e.removeAttribute("class"), e.getAttribute("style") || e.removeAttribute("style")
+}
+function getVisibleNonWhitespaceTextNodes(e, t, n, i, r) {
+    function a(e) {
+        var t = e.children[0];
+        if (t)
+            for (var n = t.children, i = n.length, r = 0; i > r; ++r)
+                if ("none" !== getComputedStyle(n[r])["float"])
+                    return !1;
+        return !0
+    }
+    function o(e, i) {
+        if (e.nodeType === Node.TEXT_NODE)
+            return void (/\S/.test(e.nodeValue) && s.push(e));
+        if (e.nodeType === Node.ELEMENT_NODE && isElementVisible(e) && !(n && ++l > n || r && r.has(e))) {
+            var u = e.tagName;
+            if ("IFRAME" !== u && "FORM" !== u) {
+                if (c[u])
+                    i--;
+                else if ("UL" !== u && "OL" !== u || !a(e)) {
+                    var m = e.parentElement;
+                    if (m) {
+                        var d = m.tagName;
+                        "SECTION" !== d || e.previousElementSibling || e.nextElementSibling || i--
+                    }
+                } else
+                    i--;
+                var h = i + 1;
+                if (t > h)
+                    for (var g = e.childNodes, f = g.length, p = 0; f > p; ++p)
+                        o(g[p], h)
+            }
+        }
+    }
+    var l = 0,
+        s = [],
+        c = {
+            P: 1,
+            STRONG: 1,
+            B: 1,
+            EM: 1,
+            I: 1,
+            SPAN: 1,
+            SECTION: 1
+        };
+    return i && (c.CENTER = 1, c.FONT = 1), o(e, 0), s
+}
+function mapOfVisibleTextNodeComputedStyleReductionToNumberOfMatchingCharacters(e, t) {
+    const n = 100;
+    for (var i = {}, r = getVisibleNonWhitespaceTextNodes(e, n), a = r.length, o = 0; a > o; ++o) {
+        var l = r[o],
+            s = l.length,
+            c = l.parentElement,
+            u = getComputedStyle(c),
+            m = t(u);
+        i[m] ? i[m] += s : i[m] = s
+    }
+    return i
+}
+function keyOfMaximumValueInDictionary(e) {
+    var t,
+        n;
+    for (var i in e) {
+        var r = e[i];
+        (!n || r > n) && (t = i, n = r)
+    }
+    return t
+}
+function elementIsProtected(e) {
+    return e.classList.contains("protected") || e.querySelector(".protected")
+}
+function dominantFontFamilyAndSizeForElement(e) {
+    var t = mapOfVisibleTextNodeComputedStyleReductionToNumberOfMatchingCharacters(e, function(e) {
+        return e.fontFamily + "|" + e.fontSize
+    });
+    return keyOfMaximumValueInDictionary(t)
+}
+function dominantFontSizeInPointsFromFontFamilyAndSizeString(e) {
+    return e ? parseInt(e.split("|")[1]) : null
+}
+function canvasElementHasNoUserVisibleContent(e) {
+    if (!e.width || !e.height)
+        return !0;
+    for (var t = e.getContext("2d"), n = t.getImageData(0, 0, e.width, e.height).data, i = 0, r = n.length; r > i; i += 4) {
+        var a = n[i + 3];
+        if (a)
+            return !1
+    }
+    return !0
+}
+function findArticleNodeSelectorsInWhitelistForHostname(e, t) {
+    const n = [[AppleDotComAndSubdomainsRegex, "*[itemprop='articleBody']"], [/^(.+\.)?buzzfeed\.com\.?$/, "article #buzz_sub_buzz"], [/^(.+\.)?mashable\.com\.?$/, ".parsec-body .parsec-container"], [/^(.+\.)?cnet\.com\.?$/, "#rbContent.container"]];
+    for (var i = n.length, r = 0; i > r; ++r) {
+        var a = n[r],
+            o = a[0];
+        if (o.test(e.toLowerCase())) {
+            var l = a[1],
+                s = t(l);
+            if (s)
+                return
+        }
+    }
+}
+function functionToPreventPruningDueToInvisibilityInWhitelistForHostname(e) {
+    const t = [[/^mobile\.nytimes\.com\.?$/, function(e, t) {
+        var n = e;
+        if (!t)
+            return !1;
+        for (; n && n !== t;) {
+            if (n.classList.contains("hidden"))
+                return !0;
+            n = n.parentElement
+        }
+        return !1
+    }]];
+    for (var n = t.length, i = 0; n > i; ++i) {
+        var r = t[i],
+            a = r[0];
+        if (a.test(e.toLowerCase()))
+            return r[1]
+    }
+    return null
+}
+function elementIsAHeader(e) {
+    return !!{
+        H1: 1,
+        H2: 1,
+        H3: 1,
+        H4: 1,
+        H5: 1,
+        H6: 1
+    }[e.tagName]
+}
+function leafElementForElementAndDirection(e, t) {
+    var n = e.ownerDocument,
+        i = n.createTreeWalker(n.body, NodeFilter.SHOW_ELEMENT, {
+            acceptNode: function(e) {
+                return 0 === e.children.length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+            }
+        });
+    return i.currentNode = e, i[t]()
+}
+function previousLeafElementForElement(e) {
+    return leafElementForElementAndDirection(e, "previousNode")
+}
+function nextLeafElementForElement(e) {
+    return leafElementForElementAndDirection(e, "nextNode")
+}
+function nextNonFloatingVisibleElementSibling(e) {
+    for (var t = e; t = t.nextElementSibling;)
+        if (isElementVisible(t) && "none" === getComputedStyle(t)["float"])
+            return t;
+    return null
+}
+function elementWithLargestAreaFromElements(e) {
+    var t = e.length;
+    if (!t)
+        return null;
+    for (var n, i = 0, r = 0; t > r; ++r) {
+        var a = e[r],
+            o = cachedElementBoundingRect(a),
+            l = o.width * o.height;
+        l > i && (n = a, i = l)
+    }
+    return n
+}
+function unwrappedArticleContentElement(e) {
+    for (var t = e;;) {
+        for (var n = t.childNodes, i = n.length, r = null, a = 0; i > a; ++a) {
+            var o = n[a],
+                l = o.nodeType,
+                s = function() {
+                    return l === Node.ELEMENT_NODE ? !0 : l === Node.TEXT_NODE ? !isNodeWhitespace(o) : !1
+                }();
+            if (s) {
+                if (r)
+                    return t;
+                var c = o.tagName;
+                if ("DIV" !== c && "ARTICLE" !== c && "SECTION" !== c)
+                    return t;
+                r = o
+            }
+        }
+        if (!r)
+            break;
+        t = r
+    }
+    return t
+}
+function elementsMatchingClassesInClassList(e, t) {
+    return elementsOfSameClassIgnoringClassNamesMatchingRegexp(e, t)
+}
+function elementsMatchingClassesInClassListIgnoringCommonLayoutClassNames(e, t) {
+    const n = /clearfix/i;
+    return elementsOfSameClassIgnoringClassNamesMatchingRegexp(e, t, n)
+}
+function elementsMatchingClassesInClassListIgnoringClassesWithNumericSuffix(e, t) {
+    const n = /\d+$/;
+    return elementsOfSameClassIgnoringClassNamesMatchingRegexp(e, t, n)
+}
+function elementsOfSameClassIgnoringClassNamesMatchingRegexp(e, t, n) {
+    for (var i = "", r = e.length, a = 0; r > a; ++a) {
+        var o = e[a];
+        n && n.test(o) || (i += "." + o)
+    }
+    try {
+        return t.querySelectorAll(i)
+    } catch (l) {
+        return []
+    }
 }
 function childrenWithParallelStructure(e) {
     var t = e.children;
@@ -279,118 +536,197 @@ function childrenWithParallelStructure(e) {
     var n = t.length;
     if (!n)
         return [];
-    var r = {};
-    for (var i = 0; i < n; ++i) {
-        var s = t[i];
-        if (CandidateTagNamesToIgnore[s.tagName] ||!s.className)
-            continue;
-        var o = s.classList, u = o.length;
-        for (var a = 0; a < u; ++a) {
-            var f = o[a], l = r[f];
-            l ? l.push(s) : r[f] = [s]
-        }
+    for (var i = {}, r = 0; n > r; ++r) {
+        var a = t[r];
+        if (!CandidateTagNamesToIgnore[a.tagName] && a.className)
+            for (var o = a.classList, l = o.length, s = 0; l > s; ++s) {
+                var c = o[s],
+                    u = i[c];
+                u ? u.push(a) : i[c] = [a]
+            }
     }
-    var c = Math.floor(n / 2);
-    for (var f in r) {
-        var l = r[f];
-        if (l.length > c)
-            return l
+    var m = Math.floor(n / 2);
+    for (var c in i) {
+        var u = i[c];
+        if (u.length > m)
+            return u
     }
     return []
 }
-const ReaderMinimumScore = 1600, ReaderMinimumAdvantage = 15, ArticleMinimumScoreDensity = 4.25, BlacklistedHostsAllowedPathRegexMap = {
-    "www.apple.com": /^\/([a-z]{2,4}\/){0,2}pr\/|^\/hotnews\//
-}, ListOfHostnameAndTrustedArticleNodeSelectorPairs = [[/.*\.apple.com$/, "article"]], CandidateMinimumWidth = 280, CandidateMinimumHeight = 295, CandidateMinimumArea = 17e4, CandidateMaximumTop = 1300, CandidateMinimumWidthPortionForIndicatorElements = .5, CandidateMinumumListItemLineCount = 4, CandidateTagNamesToIgnore = {
-    A: 1,
-    EMBED: 1,
-    FORM: 1,
-    HTML: 1,
-    IFRAME: 1,
-    OBJECT: 1,
-    OL: 1,
-    OPTION: 1,
-    SCRIPT: 1,
-    STYLE: 1,
-    svg: 1,
-    UL: 1
-}, PrependedArticleCandidateMinimumHeight = 50, AppendedArticleCandidateMinimumHeight = 200, AppendedArticleCandidateMaximumVerticalDistanceFromArticle = 150, StylisticClassNames = {
-    justfy: 1,
-    justify: 1,
-    left: 1,
-    right: 1,
-    small: 1
-}, CommentRegEx = /comment|meta|footer|footnote/, CommentMatchPenalty = .75, ArticleRegEx = /(?:(?:^|\s)(?:(post|hentry|entry)[-_]?(?:content|text|body)?|article[-_]?(?:content|text|body|page)?)(?:\s|$))/i, ArticleMatchBonus = .5, DensityExcludedElementSelector = "#disqus_thread, #comments, .userComments", AttributesToRemoveRegEx = /^on|^id$|^class$|^style$/, PositiveRegEx = /article|body|content|entry|hentry|page|pagination|post|text/i, NegativeRegEx = /advertisement|breadcrumb|combx|comment|contact|disqus|footer|link|meta|mod-conversations|promo|related|scroll|share|shoutbox|sidebar|social|sponsor|subscribe|tags|toolbox|widget|_ad$/i, VeryPositiveClassNameRegEx = /instapaper_body/, VeryNegativeClassNameRegEx = /instapaper_ignore/, SharingRegex = /email|print|rss|digg|slashdot|delicious|reddit|share/i, HostnamesKnownToContainEmbeddableMediaRegex = /youtube|vimeo|dailymotion/, MinimumAverageDistanceBetweenHRElements = 400, MinimumAverageDistanceBetweenHeaderElements = 400, PortionOfCandidateHeightToIgnoreForHeaderCheck = .1, DefaultNumberOfTextNodesToCheckForLanguageMultiplier = 3, NumberOfCharactersPerTextNodeToEvaluateForLanguageMultiplier = 12, MinimumRatioOfCharactersForLanguageMultiplier = .5, ScoreMultiplierForChineseJapaneseKorean = 3, MinimumContentMediaHeight = 150, MinimumContentMediaWidthToArticleWidthRatio = .25, MaximumContentMediaAreaToArticleAreaRatio = .2, LinkContinueMatchRegEx = /continue/gi, LinkNextMatchRegEx = /next/gi, LinkPageMatchRegEx = /page/gi, LinkListItemBonus = 5, LinkPageMatchBonus = 10, LinkNextMatchBonus = 15, LinkContinueMatchBonus = 15, LinkNextOrdinalValueBase = 3, LinkMismatchValueBase = 2, LinkMatchWeight = 200, LinkMaxVerticalDistanceFromArticle = 200, LinkVerticalDistanceFromArticleWeight = 150, LinkCandidateXPathQuery = "descendant-or-self::*[(not(@id) or (@id!='disqus_thread' and @id!='comments')) and (not(@class) or @class!='userComments')]/a", LinkDateRegex = /\D(?:\d\d(?:\d\d)?[\-\/](?:10|11|12|0?[1-9])[\-\/](?:30|31|[12][0-9]|0?[1-9])|\d\d(?:\d\d)?\/(?:10|11|12|0[1-9])|(?:10|11|12|0?[1-9])\-(?:30|31|[12][0-9]|0?[1-9])\-\d\d(?:\d\d)?|(?:30|31|[12][0-9]|0?[1-9])\-(?:10|11|12|0?[1-9])\-\d\d(?:\d\d)?)\D/, LinkURLSearchParameterKeyMatchRegex = /(page|^p$|^pg$)/i, LinkURLPageSlashNumberMatchRegex = /\/.*page.*\/\d+/i, LinkURLSlashDigitEndMatchRegex = /\/\d+\/?$/, LinkURLArchiveSlashDigitEndMatchRegex = /archives?\/\d+\/?$/, LinkURLBadSearchParameterKeyMatchRegex = /author|comment|feed|id|nonce|related/i, LinkURLSemanticMatchBonus = 100, LinkMinimumURLSimilarityRatio = .75, HeaderMinimumDistanceFromArticleTop = 200, HeaderLevenshteinDistanceToLengthRatio = .75, MinimumRatioOfListItemsBeingRelatedToSharingToPruneEntireList = .5, FloatMinimumHeight = 130, ImageSizeTiny = 32, ToleranceForLeadingImageWidthToArticleWidthForFullWidthPresentation = 50, MaximumFloatWidth = 325, AnchorImageMinimumWidth = 100, AnchorImageMinimumHeight = 100, MinimumHeightForImagesAboveTheArticleTitle = 50, MainImageMinimumWidthAndHeight = 83, BaseFontSize = 16, BaseLineHeightRatio = 1.125, MaximumExactIntegralValue = 9007199254740992, TitleCandidateDepthScoreMultiplier = .1, DocumentPositionDisconnected = 1, DocumentPositionPreceding = 2, DocumentPositionFollowing = 4, DocumentPositionContains = 8, DocumentPositionContainedBy = 16, TextNodeLengthPower = 1.25, KnownImageLazyLoadingAttributes = {
-    "data-lazy-src": 1,
-    "data-original": 1,
-    "data-src": 1,
-    "original-src": 1,
-    "rel:bf_image_src": 1
-}, StringSimilarityToDeclareStringsNearlyIdentical = .97;
+const ReaderMinimumScore = 1600,
+    ReaderMinimumAdvantage = 15,
+    ArticleMinimumScoreDensity = 4.25,
+    CandidateMinimumWidth = 280,
+    CandidateMinimumHeight = 295,
+    CandidateMinimumArea = 17e4,
+    CandidateMaximumTop = 1300,
+    CandidateMinimumWidthPortionForIndicatorElements = .5,
+    CandidateMinumumListItemLineCount = 4,
+    CandidateTagNamesToIgnore = {
+        A: 1,
+        EMBED: 1,
+        FORM: 1,
+        HTML: 1,
+        IFRAME: 1,
+        OBJECT: 1,
+        OL: 1,
+        OPTION: 1,
+        SCRIPT: 1,
+        STYLE: 1,
+        svg: 1,
+        UL: 1
+    },
+    PrependedArticleCandidateMinimumHeight = 50,
+    AppendedArticleCandidateMinimumHeight = 200,
+    AppendedArticleCandidateMaximumVerticalDistanceFromArticle = 150,
+    StylisticClassNames = {
+        justfy: 1,
+        justify: 1,
+        left: 1,
+        right: 1,
+        small: 1
+    },
+    CommentRegEx = /comment|meta|footer|footnote/,
+    CommentMatchPenalty = .75,
+    ArticleRegEx = /(?:(?:^|\s)(?:(post|hentry|entry)[-_]?(?:content|text|body)?|article[-_]?(?:content|text|body|page)?)(?:\s|$))/i,
+    ArticleMatchBonus = .5,
+    CarouselRegEx = /carousel/i,
+    CarouselMatchPenalty = .75,
+    SectionRegex = /section/i,
+    DensityExcludedElementSelector = "#disqus_thread, #comments, .userComments",
+    AttributesToRemoveRegEx = /^on|^id$|^class$|^style$/,
+    PositiveRegEx = /article|body|content|entry|hentry|page|pagination|post|text/i,
+    NegativeRegEx = /advertisement|breadcrumb|combx|comment|contact|disqus|footer|link|meta|mod-conversations|promo|related|scroll|share|shoutbox|sidebar|social|sponsor|subscribe|tags|toolbox|widget|[-_]ad$|zoom-(in|out)/i,
+    VeryPositiveClassNameRegEx = /instapaper_body/,
+    VeryNegativeClassNameRegEx = /instapaper_ignore/,
+    SharingRegex = /email|print|rss|digg|slashdot|delicious|reddit|share/i,
+    VeryLiberalCommentRegex = /comment/i,
+    AdvertisementHostRegex = /^adserver\.|doubleclick.net$/i,
+    MinimumAverageDistanceBetweenHRElements = 400,
+    MinimumAverageDistanceBetweenHeaderElements = 400,
+    PortionOfCandidateHeightToIgnoreForHeaderCheck = .1,
+    DefaultNumberOfTextNodesToCheckForLanguageMultiplier = 3,
+    NumberOfCharactersPerTextNodeToEvaluateForLanguageMultiplier = 12,
+    MinimumRatioOfCharactersForLanguageMultiplier = .5,
+    ScoreMultiplierForChineseJapaneseKorean = 3,
+    MinimumContentMediaHeight = 150,
+    MinimumContentMediaWidthToArticleWidthRatio = .25,
+    MaximumContentMediaAreaToArticleAreaRatio = .2,
+    LinkContinueMatchRegEx = /continue/gi,
+    LinkNextMatchRegEx = /next/gi,
+    LinkPageMatchRegEx = /page/gi,
+    LinkListItemBonus = 5,
+    LinkPageMatchBonus = 10,
+    LinkNextMatchBonus = 15,
+    LinkContinueMatchBonus = 15,
+    LinkNextOrdinalValueBase = 3,
+    LinkMismatchValueBase = 2,
+    LinkMatchWeight = 200,
+    LinkMaxVerticalDistanceFromArticle = 200,
+    LinkVerticalDistanceFromArticleWeight = 150,
+    LinkCandidateXPathQuery = "descendant-or-self::*[(not(@id) or (@id!='disqus_thread' and @id!='comments')) and (not(@class) or @class!='userComments')]/a",
+    LinkDateRegex = /\D(?:\d\d(?:\d\d)?[\-\/](?:10|11|12|0?[1-9])[\-\/](?:30|31|[12][0-9]|0?[1-9])|\d\d(?:\d\d)?\/(?:10|11|12|0[1-9])|(?:10|11|12|0?[1-9])\-(?:30|31|[12][0-9]|0?[1-9])\-\d\d(?:\d\d)?|(?:30|31|[12][0-9]|0?[1-9])\-(?:10|11|12|0?[1-9])\-\d\d(?:\d\d)?)\D/,
+    LinkURLSearchParameterKeyMatchRegex = /(page|^p$|^pg$)/i,
+    LinkURLPageSlashNumberMatchRegex = /\/.*page.*\/\d+/i,
+    LinkURLSlashDigitEndMatchRegex = /\/\d+\/?$/,
+    LinkURLArchiveSlashDigitEndMatchRegex = /archives?\/\d+\/?$/,
+    LinkURLBadSearchParameterKeyMatchRegex = /author|comment|feed|id|nonce|related/i,
+    LinkURLSemanticMatchBonus = 100,
+    LinkMinimumURLSimilarityRatio = .75,
+    HeaderMinimumDistanceFromArticleTop = 200,
+    HeaderLevenshteinDistanceToLengthRatio = .75,
+    MinimumRatioOfListItemsBeingRelatedToSharingToPruneEntireList = .5,
+    FloatMinimumHeight = 130,
+    ImageSizeTiny = 32,
+    ToleranceForLeadingImageWidthToArticleWidthForFullWidthPresentation = 50,
+    MaximumFloatWidth = 325,
+    AnchorImageMinimumWidth = 100,
+    AnchorImageMinimumHeight = 100,
+    MinimumHeightForImagesAboveTheArticleTitle = 50,
+    MainImageMinimumWidthAndHeight = 83,
+    BaseFontSize = 16,
+    BaseLineHeightRatio = 1.125,
+    MaximumExactIntegralValue = 9007199254740992,
+    TitleCandidateDepthScoreMultiplier = .1,
+    TextNodeLengthPower = 1.25,
+    LazyLoadRegex = /lazy/i,
+    StringSimilarityToDeclareStringsNearlyIdentical = .97,
+    FindArticleMode = {
+        Element: !1,
+        ExistenceOfElement: !0
+    },
+    AppleDotComAndSubdomainsRegex = /.*\.apple\.com\.?$/,
+    SchemaDotOrgArticleContainerSelector = "*[itemtype='https://schema.org/Article'], *[itemtype='https://schema.org/NewsArticle'], *[itemtype='http://schema.org/Article'], *[itemtype='http://schema.org/NewsArticle']",
+    CleaningType = {
+        MainArticleContent: 0,
+        MetadataContent: 1,
+        LeadingFigure: 2
+    },
+    MaximumWidthOrHeightOfImageInMetadataSection = 20;
 CandidateElement = function(e, t) {
     this.element = e, this.contentDocument = t, this.textNodes = this.usableTextNodesInElement(this.element), this.rawScore = this.calculateRawScore(), this.tagNameAndAttributesScoreMultiplier = this.calculateElementTagNameAndAttributesScoreMultiplier(), this.languageScoreMultiplier = 0, this.depthInDocument = 0
-}, CandidateElement.extraArticleCandidateIfElementIsViable = function(t, n, r, i) {
-    const s = "a, b, strong, i, em, u, span";
-    var o = cachedElementBoundingRect(t), u = cachedElementBoundingRect(n.element);
-    if (i && o.height < PrependedArticleCandidateMinimumHeight ||!i && o.height < AppendedArticleCandidateMinimumHeight)
-        if (t.childElementCount && t.querySelectorAll("*").length !== t.querySelectorAll(s).length)
-            return null;
+}, CandidateElement.extraArticleCandidateIfElementIsViable = function(e, t, n, i) {
+    const r = "a, b, strong, i, em, u, span";
+    var a = cachedElementBoundingRect(e),
+        o = cachedElementBoundingRect(t.element);
+    if ((i && a.height < PrependedArticleCandidateMinimumHeight || !i && a.height < AppendedArticleCandidateMinimumHeight) && e.childElementCount && e.querySelectorAll("*").length !== e.querySelectorAll(r).length)
+        return null;
     if (i) {
-        if (o.bottom > u.top)
+        if (a.bottom > o.top)
             return null
-    } else if (o.top < u.bottom)
+    } else if (a.top < o.bottom)
         return null;
     if (!i) {
-        var a = o.top - u.bottom;
-        if (a > AppendedArticleCandidateMaximumVerticalDistanceFromArticle)
+        var l = a.top - o.bottom;
+        if (l > AppendedArticleCandidateMaximumVerticalDistanceFromArticle)
             return null
     }
-    if (o.left > u.right || o.right < u.left)
+    if (a.left > o.right || a.right < o.left)
         return null;
-    if (elementLooksLikePartOfACarousel(t))
+    if (elementLooksLikePartOfACarousel(e))
         return null;
-    var f = new CandidateElement(t, r);
-    return f.isPrepended = i, f
-}, CandidateElement.candidateIfElementIsViable = function(t, n, r) {
-    var i = cachedElementBoundingRect(t);
-    return i.width < CandidateMinimumWidth || i.height < CandidateMinimumHeight ? null : i.width * i.height < CandidateMinimumArea ? null : !r && i.top > CandidateMaximumTop ? null : CandidateElement.candidateElementAdjustedHeight(t) < CandidateMinimumHeight ? null : new CandidateElement(t, n)
-}, CandidateElement.candidateElementAdjustedHeight = function(t) {
-    var n = cachedElementBoundingRect(t), r = n.height, i = t.getElementsByTagName("form"), s = i.length;
-    for (var o = 0; o < s; ++o) {
-        var u = i[o], a = cachedElementBoundingRect(u);
-        a.width > n.width * CandidateMinimumWidthPortionForIndicatorElements && (r -= a.height)
+    var s = new CandidateElement(e, n);
+    return s.isPrepended = i, s
+}, CandidateElement.candidateIfElementIsViable = function(e, t, n) {
+    var i = cachedElementBoundingRect(e);
+    return i.width < CandidateMinimumWidth || i.height < CandidateMinimumHeight ? null : i.width * i.height < CandidateMinimumArea ? null : !n && i.top > CandidateMaximumTop ? null : CandidateElement.candidateElementAdjustedHeight(e) < CandidateMinimumHeight ? null : new CandidateElement(e, t)
+}, CandidateElement.candidateElementAdjustedHeight = function(e) {
+    for (var t = cachedElementBoundingRect(e), n = t.height, i = e.getElementsByTagName("form"), r = i.length, a = 0; r > a; ++a) {
+        var o = i[a],
+            l = cachedElementBoundingRect(o);
+        l.width > t.width * CandidateMinimumWidthPortionForIndicatorElements && (n -= l.height)
     }
-    var f = t.querySelectorAll("ol, ul"), l = f.length, c = null;
-    for (var o = 0; o < l; ++o) {
-        var h = f[o];
-        if (c && c.compareDocumentPosition(h) & DocumentPositionContainedBy)
-            continue;
-        var p = h.getElementsByTagName("li"), d = p.length, v = cachedElementBoundingRect(h);
-        if (!d) {
-            r -= v.height;
-            continue
+    for (var s = e.querySelectorAll("ol, ul"), c = s.length, u = null, a = 0; c > a; ++a) {
+        var m = s[a];
+        if (!(u && u.compareDocumentPosition(m) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+            var d = m.getElementsByTagName("li"),
+                h = d.length,
+                g = cachedElementBoundingRect(m);
+            if (h) {
+                var f = g.height / h,
+                    p = getComputedStyle(d[0]),
+                    E = parseInt(p.lineHeight);
+                if (isNaN(E)) {
+                    var v = fontSizeFromComputedStyle(p);
+                    E = v * BaseLineHeightRatio
+                }
+                g.width > t.width * CandidateMinimumWidthPortionForIndicatorElements && CandidateMinumumListItemLineCount > f / E && (n -= g.height, u = m)
+            } else
+                n -= g.height
         }
-        var m = v.height / d, g = getComputedStyle(p[0]), y = parseInt(g.lineHeight);
-        if (isNaN(y)) {
-            var b = fontSizeFromComputedStyle(g);
-            y = b * BaseLineHeightRatio
-        }
-        v.width > n.width * CandidateMinimumWidthPortionForIndicatorElements && m / y < CandidateMinumumListItemLineCount && (r -= v.height, c = h)
     }
-    return r
+    return n
 }, CandidateElement.prototype = {
     calculateRawScore: function() {
-        var t = 0, n = this.textNodes, r = n.length;
-        for (var i = 0; i < r; ++i)
-            t += this.rawScoreForTextNode(n[i]);
-        return t
+        for (var e = 0, t = this.textNodes, n = t.length, i = 0; n > i; ++i)
+            e += this.rawScoreForTextNode(t[i]);
+        return e
     },
     calculateElementTagNameAndAttributesScoreMultiplier: function() {
         return scoreMultiplierForElementTagNameAndAttributes(this.element)
     },
     calculateLanguageScoreMultiplier: function() {
-        if (this.languageScoreMultiplier !== 0)
-            return;
-        this.languageScoreMultiplier = languageScoreMultiplierForTextNodes(this.textNodes)
+        0 === this.languageScoreMultiplier && (this.languageScoreMultiplier = languageScoreMultiplierForTextNodes(this.textNodes))
     },
     depth: function() {
         return this.depthInDocument || (this.depthInDocument = elementDepth(this.element)), this.depthInDocument
@@ -402,34 +738,32 @@ CandidateElement = function(e, t) {
         return this.rawScore * this.tagNameAndAttributesScoreMultiplier
     },
     scoreDensity: function() {
-        var t = 0, n = this.element.querySelector(DensityExcludedElementSelector);
-        n && (t = n.clientWidth * n.clientHeight);
-        var r = this.element.children || [], i = r.length;
-        for (var s = 0; s < i; ++s) {
-            var o = r[s];
-            elementIsCommentBlock(o) && (t += o.clientWidth * o.clientHeight)
+        var e = 0,
+            t = this.element.querySelector(DensityExcludedElementSelector);
+        t && (e = t.clientWidth * t.clientHeight);
+        for (var n = this.element.children || [], i = n.length, r = 0; i > r; ++r) {
+            var a = n[r];
+            elementIsCommentBlock(a) && (e += a.clientWidth * a.clientHeight)
         }
-        var u = cachedElementBoundingRect(this.element).width * cachedElementBoundingRect(this.element).height, a = u * MaximumContentMediaAreaToArticleAreaRatio, f = cachedElementBoundingRect(this.element).width * MinimumContentMediaWidthToArticleWidthRatio, l = this.element.querySelectorAll("img, object, video"), c = l.length;
-        for (var s = 0; s < c; ++s) {
-            var h = cachedElementBoundingRect(l[s]);
-            if (h.width >= f && h.height > MinimumContentMediaHeight) {
-                var p = h.width * h.height;
-                p < a && (t += p)
+        for (var o = cachedElementBoundingRect(this.element).width * cachedElementBoundingRect(this.element).height, l = o * MaximumContentMediaAreaToArticleAreaRatio, s = cachedElementBoundingRect(this.element).width * MinimumContentMediaWidthToArticleWidthRatio, c = this.element.querySelectorAll("img, object, video"), u = c.length, r = 0; u > r; ++r) {
+            var m = cachedElementBoundingRect(c[r]);
+            if (m.width >= s && m.height > MinimumContentMediaHeight) {
+                var d = m.width * m.height;
+                l > d && (e += d)
             }
         }
-        var d = this.basicScore(), v = u - t, m = this.textNodes.length, g = 0, y = 0;
-        for (var s = 0; s < m; ++s) {
-            var b = this.textNodes[s].parentNode;
-            b && (y += fontSizeFromComputedStyle(getComputedStyle(b)), g++)
+        for (var h = this.basicScore(), g = o - e, f = this.textNodes.length, p = 0, E = 0, r = 0; f > r; ++r) {
+            var v = this.textNodes[r].parentNode;
+            v && (E += fontSizeFromComputedStyle(getComputedStyle(v)), p++)
         }
-        var w = BaseFontSize;
-        return g && (w = y/=g), this.calculateLanguageScoreMultiplier(), d / v * 1e3 * (w / BaseFontSize) * this.languageScoreMultiplier
+        var N = BaseFontSize;
+        return p && (N = E /= p), this.calculateLanguageScoreMultiplier(), h / g * 1e3 * (N / BaseFontSize) * this.languageScoreMultiplier
     },
-    usableTextNodesInElement: function(t) {
-        var n = [];
-        if (!t)
-            return n;
-        const r = {
+    usableTextNodesInElement: function(e) {
+        var t = [];
+        if (!e)
+            return t;
+        const n = {
             A: 1,
             DD: 1,
             DT: 1,
@@ -443,358 +777,329 @@ CandidateElement = function(e, t) {
             UL: 1,
             IFRAME: 1
         };
-        var i = this.contentDocument, s = function(e) {
-            const t = "text()|*/text()|*/a/text()|*/li/text()|*/span/text()|*/em/text()|*/i/text()|*/strong/text()|*/b/text()|*/font/text()|blockquote/*/text()|div[count(./p)=count(./*)]/p/text()";
-            var s = i.evaluate(t, e, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), o = s.snapshotLength;
-            for (var u = 0; u < o; ++u) {
-                var a = s.snapshotItem(u);
-                if (r[a.parentNode.tagName] || a._countedTextNode || isNodeWhitespace(a))
-                    continue;
-                a._countedTextNode=!0, n.push(a)
-            }
-        };
-        s(t);
-        var o = childrenWithParallelStructure(t), u = o.length;
-        for (var a = 0; a < u; ++a) {
-            var f = o[a];
-            s(f)
+        var i = this.contentDocument,
+            r = function(e) {
+                const r = "text()|*/text()|*/a/text()|*/li/text()|*/li/p/text()|*/span/text()|*/em/text()|*/i/text()|*/strong/text()|*/b/text()|*/font/text()|blockquote/*/text()|div[count(./p)=count(./*)]/p/text()|div[count(*)=1]/div/p/text()|div[count(*)=1]/div/p/*/text()";
+                for (var a = i.evaluate(r, e, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), o = a.snapshotLength, l = 0; o > l; ++l) {
+                    var s = a.snapshotItem(l);
+                    n[s.parentNode.tagName] || s._countedTextNode || isNodeWhitespace(s) || (s._countedTextNode = !0, t.push(s))
+                }
+            };
+        r(e);
+        for (var a = childrenWithParallelStructure(e), o = a.length, l = 0; o > l; ++l) {
+            var s = a[l];
+            r(s)
         }
-        var l = n.length;
-        for (var a = 0; a < l; ++a)
-            delete n[a]._countedTextNode;
-        return n
+        for (var c = t.length, l = 0; c > l; ++l)
+            delete t[l]._countedTextNode;
+        return t
     },
-    addTextNodesFromCandidateElement: function(t) {
-        var n = this.textNodes.length;
-        for (var r = 0; r < n; ++r)
-            this.textNodes[r].alreadyCounted=!0;
-        var i = t.textNodes, s = i.length;
-        for (var r = 0; r < s; ++r)
-            i[r].alreadyCounted || this.textNodes.push(i[r]);
-        var n = this.textNodes.length;
-        for (var r = 0; r < n; ++r)
-            this.textNodes[r].alreadyCounted = null;
+    addTextNodesFromCandidateElement: function(e) {
+        for (var t = this.textNodes.length, n = 0; t > n; ++n)
+            this.textNodes[n].alreadyCounted = !0;
+        for (var i = e.textNodes, r = i.length, n = 0; r > n; ++n)
+            i[n].alreadyCounted || this.textNodes.push(i[n]);
+        for (var t = this.textNodes.length, n = 0; t > n; ++n)
+            this.textNodes[n].alreadyCounted = null;
         this.rawScore = this.calculateRawScore()
     },
-    rawScoreForTextNode: function(t) {
-        const n = 20;
-        if (!t)
+    rawScoreForTextNode: function(e) {
+        const t = 20;
+        if (!e)
             return 0;
-        var r = t.length;
-        if (r < n)
+        var n = e.length;
+        if (t > n)
             return 0;
-        var i = t.parentNode;
+        var i = e.parentNode;
         if (!isElementVisible(i))
             return 0;
-        var s = 1;
-        while (i && i !== this.element)
-            s -= .1, i = i.parentNode;
-        return Math.pow(r * s, TextNodeLengthPower)
+        for (var r = 1; i && i !== this.element;)
+            r -= .1, i = i.parentNode;
+        return Math.pow(n * r, TextNodeLengthPower)
     },
     shouldDisqualifyDueToScoreDensity: function() {
-        return this.scoreDensity() < ArticleMinimumScoreDensity?!0 : !1
+        return this.scoreDensity() < ArticleMinimumScoreDensity
     },
     shouldDisqualifyDueToHorizontalRuleDensity: function() {
-        var t = this.element.getElementsByTagName("hr"), n = t.length, r = 0, i = cachedElementBoundingRect(this.element), s = i.width * .7;
-        for (var o = 0; o < n; ++o)
-            t[o].clientWidth > s && r++;
-        if (r) {
-            var u = i.height / r;
-            if (u < MinimumAverageDistanceBetweenHRElements)
+        for (var e = this.element.getElementsByTagName("hr"), t = e.length, n = 0, i = cachedElementBoundingRect(this.element), r = .7 * i.width, a = 0; t > a; ++a)
+            e[a].clientWidth > r && n++;
+        if (n) {
+            var o = i.height / n;
+            if (MinimumAverageDistanceBetweenHRElements > o)
                 return !0
         }
         return !1
     },
     shouldDisqualifyDueToHeaderDensity: function() {
-        var t = "(h1|h2|h3|h4|h5|h6|*/h1|*/h2|*/h3|*/h4|*/h5|*/h6)[a[@href]]", n = this.contentDocument.evaluate(t, this.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), r = n.snapshotLength;
-        if (r > 2) {
-            var i = 0, s = cachedElementBoundingRect(this.element), o = s.height * PortionOfCandidateHeightToIgnoreForHeaderCheck;
-            for (var u = 0; u < r; ++u) {
-                var a = n.snapshotItem(u), f = cachedElementBoundingRect(a);
-                f.top - s.top > o && s.bottom - f.bottom > o && i++
+        var e = "(h1|h2|h3|h4|h5|h6|*/h1|*/h2|*/h3|*/h4|*/h5|*/h6)[a[@href]]",
+            t = this.contentDocument.evaluate(e, this.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null),
+            n = t.snapshotLength;
+        if (n > 2) {
+            for (var i = 0, r = cachedElementBoundingRect(this.element), a = r.height * PortionOfCandidateHeightToIgnoreForHeaderCheck, o = 0; n > o; ++o) {
+                var l = t.snapshotItem(o),
+                    s = cachedElementBoundingRect(l);
+                s.top - r.top > a && r.bottom - s.bottom > a && i++
             }
-            var l = s.height / i;
-            if (l < MinimumAverageDistanceBetweenHeaderElements)
+            var c = r.height / i;
+            if (MinimumAverageDistanceBetweenHeaderElements > c)
                 return !0
         }
         return !1
     },
-    shouldDisqualifyDueToSimilarElements: function(t) {
-        function i(e) {
-            return !!{
-                H1: 1,
-                H2: 1,
-                H3: 1,
-                H4: 1,
-                H5: 1,
-                H6: 1
-            }
-            [e.tagName]
-        }
-        function s(e, t) {
-            if (!e ||!t)
+    shouldDisqualifyDueToSimilarElements: function(e) {
+        function t(e, t) {
+            if (!e || !t)
                 return !1;
-            const n = 1;
+            var n = 1;
             return e.className ? e.className === t.className : elementFingerprintForDepth(e, n) === elementFingerprintForDepth(t, n)
         }
-        const n = /clearfix/i, r = "h1, h2, h3, h4, h5, h6";
-        var o = this.element;
-        if (o.tagName === "LI" || o.tagName === "DD") {
-            var u = o.parentNode, a = u.children.length;
-            for (var f = 0; f < a; ++f) {
-                var l = u.children[f];
-                if (l.tagName === o.tagName && l.className === o.className && l !== o)
+        const n = "h1, h2, h3, h4, h5, h6";
+        var i = function(e) {
+                const t = /related-posts/i;
+                for (var n = e.parentElement; n && n !== this.contentDocument.body; n = n.parentElement)
+                    if (t.test(n.className))
+                        return !0;
+                return !1
+            }.bind(this),
+            r = this.element;
+        if ("LI" === r.tagName || "DD" === r.tagName)
+            for (var a = r.parentNode, o = a.children.length, l = 0; o > l; ++l) {
+                var s = a.children[l];
+                if (s.tagName === r.tagName && s.className === r.className && s !== r)
                     return !0
             }
-        }
-        var c = o.getAttribute("class");
-        c || (o = o.parentElement, o && (c = o.getAttribute("class"), c || (o = o.parentElement, o && (c = o.getAttribute("class")))));
-        if (c) {
-            t || (t = []);
-            var h = t.length;
-            for (var f = 0; f < h; ++f)
-                t[f].element.candidateElement = t[f];
-            var p;
-            try {
-                var d = c.split(" "), v = "";
-                for (var f = 0; f < d.length; ++f) {
-                    if (n.test(d[f]))
-                        continue;
-                    d[f].length && (v += "." + d[f])
-                }
-                p = this.contentDocument.querySelectorAll(v)
-            } catch (m) {
-                p = []
-            }
-            var g=!1, y = elementDepth(o), b = p.length;
-            for (var f = 0; f < b; ++f) {
-                var l = p[f];
-                if (l === o)
-                    continue;
-                if (l.parentElement === o || o.parentElement === l)
-                    continue;
-                if (!isElementVisible(l))
-                    continue;
-                var w = l.candidateElement;
-                if (!w) {
-                    w = new CandidateElement(l, this.contentDocument);
-                    if (!w)
-                        continue
-                }
-                if (w.basicScore() * ReaderMinimumAdvantage > this.basicScore()) {
-                    if (!g && cachedElementBoundingRect(l).bottom < cachedElementBoundingRect(this.element).top) {
-                        g=!0;
-                        continue
-                    }
-                    if (s(o.previousElementSibling, l.previousElementSibling) || s(o.nextElementSibling, l.nextElementSibling)) {
-                        var E = o.querySelector(r), S = l.querySelector(r);
-                        if (E && S && elementsHaveSameTagAndClassNames(E, S))
-                            return !0;
-                        E = o.previousElementSibling, S = l.previousElementSibling;
-                        if (E && S && i(E) && i(S) && elementsHaveSameTagAndClassNames(E, S))
-                            return !0
-                    }
-                    if (elementDepth(l) === y)
-                        while (l.parentElement && o.parentElement) {
-                            if (l.parentElement === o.parentElement)
-                                break;
-                                l = l.parentElement, o = o.parentElement
+        var c = r.classList;
+        if (c.length || (r = r.parentElement, r && (c = r.classList, c.length || (r = r.parentElement, r && (c = r.classList)))), c.length) {
+            e || (e = []);
+            for (var u = e.length, l = 0; u > l; ++l)
+                e[l].element.candidateElement = e[l];
+            for (var m = elementsMatchingClassesInClassListIgnoringCommonLayoutClassNames(c, this.contentDocument), d = !1, h = elementDepth(r), g = i(r), f = m.length, l = 0; f > l; ++l) {
+                var s = m[l];
+                if (s !== r && s.parentElement !== r && r.parentElement !== s && isElementVisible(s)) {
+                    var p = s.candidateElement;
+                    if ((p || (p = new CandidateElement(s, this.contentDocument))) && p.basicScore() * ReaderMinimumAdvantage > this.basicScore()) {
+                        if ("SECTION" === s.tagName && "SECTION" === r.tagName)
+                            return !1;
+                        if (SectionRegex.test(s.className) && SectionRegex.test(r.className))
+                            return !1;
+                        if (i(s) && !g)
+                            return !1;
+                        if (!d && cachedElementBoundingRect(s).bottom < cachedElementBoundingRect(this.element).top) {
+                            d = !0;
+                            continue
                         }
-                    while (o.childElementCount <= 1) {
-                        if (!o.childElementCount ||!l.childElementCount)
+                        if (t(r.previousElementSibling, s.previousElementSibling) || t(r.nextElementSibling, s.nextElementSibling)) {
+                            var E = r.querySelector(n),
+                                v = s.querySelector(n);
+                            if (E && v && elementsHaveSameTagAndClassNames(E, v))
+                                return !0;
+                            if (E = r.previousElementSibling, v = s.previousElementSibling, E && v && elementIsAHeader(E) && elementIsAHeader(v) && elementsHaveSameTagAndClassNames(E, v))
+                                return !0
+                        }
+                        if (elementDepth(s) === h)
+                            for (; s.parentElement && r.parentElement && s.parentElement !== r.parentElement;)
+                                s = s.parentElement, r = r.parentElement;
+                        for (; r.childElementCount <= 1;) {
+                            if (!r.childElementCount || !s.childElementCount)
+                                return !1;
+                            if (s.childElementCount > 1)
+                                return !1;
+                            if (r.firstElementChild.tagName !== s.firstElementChild.tagName)
+                                return !1;
+                            r = r.firstElementChild, s = s.firstElementChild
+                        }
+                        if (s.childElementCount <= 1)
                             return !1;
-                        if (l.childElementCount > 1)
+                        var v = s.firstElementChild,
+                            N = s.lastElementChild,
+                            E = r.firstElementChild,
+                            C = r.lastElementChild;
+                        if (v.tagName !== E.tagName)
                             return !1;
-                        if (o.firstElementChild.tagName !== l.firstElementChild.tagName)
+                        if (N.tagName !== C.tagName)
                             return !1;
-                        o = o.firstElementChild, l = l.firstElementChild
+                        var S = v.className,
+                            A = N.className,
+                            M = E.className,
+                            R = N.className,
+                            y = R === M ? 2 : 1;
+                        if (S.length || M.length) {
+                            if (!S.length || !M.length)
+                                return !1;
+                            if (S === M && elementsMatchingClassesInClassList(E.classList, r).length <= y)
+                                return !0
+                        }
+                        if (A.length || R.length) {
+                            if (!A.length || !R.length)
+                                return !1;
+                            if (A === R && elementsMatchingClassesInClassList(N.classList, r).length <= y)
+                                return !0
+                        }
+                        var T = E.clientHeight,
+                            x = C.clientHeight;
+                        return T && v.clientHeight && x && N.clientHeight ? T === v.clientHeight || x === N.clientHeight : !1
                     }
-                    if (l.childElementCount <= 1)
-                        return !1;
-                    var S = l.firstElementChild, x = l.lastElementChild, E = o.firstElementChild, T = o.lastElementChild;
-                    if (S.tagName !== E.tagName)
-                        return !1;
-                    if (x.tagName !== T.tagName)
-                        return !1;
-                    var N = S.className, C = x.className, k = E.className, L = x.className, A = L === k ? 2: 1;
-                    if (N.length || k.length) {
-                        if (!N.length ||!k.length)
-                            return !1;
-                        if (N === k && o.querySelectorAll("." + k.replace(/\s+/, ".")).length <= A)
-                            return !0
-                    }
-                    if (C.length || L.length) {
-                        if (!C.length ||!L.length)
-                            return !1;
-                        if (C === L && o.querySelectorAll("." + L.replace(/\s+/, ".")).length <= A)
-                            return !0
-                    }
-                    var O = E.clientHeight, M = T.clientHeight;
-                    return !O ||!S.clientHeight?!1 : !M ||!x.clientHeight?!1 : O === S.clientHeight || M === x.clientHeight?!0 : !1
                 }
             }
-            for (var f = 0; f < h; ++f)
-                t[f].element.candidateElement = null
+            for (var l = 0; u > l; ++l)
+                e[l].element.candidateElement = null
         }
         return !1
     },
     shouldDisqualifyForDeepLinking: function() {
-        function n(e) {
+        function e(e) {
             var t = e.pathname.substring(1).split("/");
             return t[t.length - 1] || t.pop(), t
         }
         const t = 5;
-        var r = this.element, i = this.contentDocument.location, s = n(i), o = s.length, u = [], a = r.getElementsByTagName("a"), f = a.length;
-        for (var l = 0; l < f; l++) {
-            var c = a[l];
-            if (i.host !== c.host)
-                continue;
-            if (n(c).length <= o)
-                continue;
-            if ((c.host + c.pathname).indexOf(i.host + i.pathname) !== 0)
-                continue;
-            if (anchorLinksToAttachment(c))
-                continue;
-            u.push(c);
-            if (u.length < t)
-                continue;
-            var h = r.offsetTop + r.offsetHeight / t;
-            return u[0].offsetTop < h
+        for (var n = this.element, i = this.contentDocument.location, r = e(i), a = r.length, o = [], l = n.getElementsByTagName("a"), s = l.length, c = 0; s > c; c++) {
+            var u = l[c];
+            if (i.host === u.host && !(e(u).length <= a || 0 !== (u.host + u.pathname).indexOf(i.host + i.pathname) || anchorLinksToAttachment(u) || (o.push(u), o.length < t))) {
+                var m = n.offsetTop + n.offsetHeight / t;
+                return o[0].offsetTop < m
+            }
         }
         return !1
     }
 }, String.prototype.lastInteger = function() {
-    const t = /[0-9]+/g;
-    var n = this.match(t);
-    return n ? parseInt(n[n.length - 1]) : NaN
-}, String.prototype.escapeCharacters = function(e) {
-    var t=!1, n = e.length;
-    for (var r = 0; r < n; ++r)
-        if (this.indexOf(e.charAt(r))!==-1) {
-            t=!0;
-            break
-        }
-    if (!t)
-        return this;
-    var i = "", s = this.length;
-    for (var r = 0; r < s; ++r)
-        e.indexOf(this.charAt(r))!==-1 && (i += "\\"), i += this.charAt(r);
-    return i
-}, String.prototype.escapeForRegExp = function() {
-    return this.escapeCharacters("^[]{}()\\.$*+?|")
-}, ReaderArticleFinder = function(e) {
-    this.contentDocument = e, this.didSearchForArticleNode=!1, this.article = null, this.didSearchForExtraArticleNode=!1, this.extraArticle = null, this.leadingImage = null, this._cachedScrollY = 0, this._cachedScrollX = 0, this._elementsWithCachedBoundingRects = [], this._cachedContentTextStyle = null, this.pageNumber = 1, this.prefixWithDateForNextPageURL = null, this._elementsEvaluatedForTextContent = [], this.previouslyDiscoveredPageURLStrings = []
+    const e = /[0-9]+/g;
+    var t = this.match(e);
+    return t ? parseInt(t[t.length - 1]) : NaN
+};
+ReaderArticleFinder = function(e) {
+    this.contentDocument = e, this.didSearchForArticleNode = !1, this.article = null, this.didSearchForExtraArticleNode = !1, this.extraArticle = null, this.leadingImage = null, this._cachedScrollY = 0, this._cachedScrollX = 0, this._elementsWithCachedBoundingRects = [], this._cachedContentTextStyle = null, this.pageNumber = 1, this.prefixWithDateForNextPageURL = null, this.previouslyDiscoveredPageURLStrings = []
 }, ReaderArticleFinder.prototype = {
     isReaderModeAvailable: function() {
-        return this.canRunReaderDetection() ? this.findArticleBySearchingWhitelist()?!0 : (this.cacheWindowScrollPosition(), this.article = this.findArticleByVisualExamination(), this.article && this.articleIsLTR(), !!this.article) : null
+        return this.findArticleBySearchingWhitelist() ? !0 : (this.cacheWindowScrollPosition(), this.findArticleFromMetadata(FindArticleMode.ExistenceOfElement) ? !0 : (this.article = this.findArticleByVisualExamination(), this.article && this.articleIsLTR(), !!this.article))
     },
     prepareToTransitionToReader: function() {
         this.adoptableArticle(!0), this.nextPageURL(), this.articleIsLTR()
     },
     nextPageURL: function() {
         if (!this._nextPageURL) {
-            var t = this.nextPageURLString();
-            typeof ReaderArticleFinderJSController != "undefined" && t && (t = ReaderArticleFinderJSController.substituteURLForNextPageURL(t)), this._nextPageURL = t
+            var e = this.nextPageURLString();
+            "undefined" != typeof ReaderArticleFinderJSController && e && (e = ReaderArticleFinderJSController.substituteURLForNextPageURL(e)), this._nextPageURL = e
         }
         return this._nextPageURL
     },
     containerElementsForMultiPageContent: function() {
-        const e = /(.*page.*)(\d{1,2})(.*)/i, t = 3;
-        var n = [], r = this.articleNode(), i, s = 0;
-        for (; ;) {
-            i = e.exec(r.getAttribute("id"));
-            if (i)
+        const e = /(.*page[^0-9]*|.*article.*item[^0-9]*)(\d{1,2})(.*)/i,
+            t = 3;
+        for (var i, n = [], r = this.articleNode(), a = 0;;) {
+            if (i = e.exec(r.getAttribute("id")))
                 break;
-            r = r.parentElement;
-            if (!r || s++===t)
+            if (r = r.parentElement, !r || a++ === t)
                 return []
         }
-        var o = childrenOfParentElement(r), u = o.length;
-        for (var a = 0; a < u; ++a) {
-            var f = o[a];
-            if (f === r)
-                continue;
-            var l = e.exec(f.getAttribute("id"));
-            if (!l || l[1] !== i[1] || l[3] !== i[3])
-                continue;
-            if (isElementVisible(f)&&!isElementPositionedOffScreen(f))
-                continue;
-            n.push(f)
+        for (var l = childrenOfParentElement(r), o = l.length, s = 0; o > s; ++s) {
+            var c = l[s];
+            if (c !== r) {
+                var m = e.exec(c.getAttribute("id"));
+                m && m[1] === i[1] && m[3] === i[3] && (isElementVisible(c) && !isElementPositionedOffScreen(c) || n.push(c))
+            }
         }
         return n
     },
     adoptableMultiPageContentElements: function() {
         return this.containerElementsForMultiPageContent().map(function(e) {
-            return this.cleanArticleNode(e, e.cloneNode(!0), !1)
+            return this.cleanArticleNode(e, e.cloneNode(!0), CleaningType.MainArticleContent, !1)
         }, this)
     },
-    classNameIsSignificantInRouteComputation: function(t) {
-        return t?!(t.toLowerCase()in StylisticClassNames) : !1
+    classNameIsSignificantInRouteComputation: function(e) {
+        return e ? !(e.toLowerCase() in StylisticClassNames) : !1
     },
-    shouldIgnoreInRouteComputation: function(t) {
-        return t.tagName === "SCRIPT" || t.tagName === "LINK" || t.tagName === "STYLE"?!0 : t.tagName !== "TR"?!1 : t.offsetHeight?!1 : !0
+    shouldIgnoreInRouteComputation: function(e) {
+        return "SCRIPT" === e.tagName || "LINK" === e.tagName || "STYLE" === e.tagName ? !0 : "TR" !== e.tagName ? !1 : !e.offsetHeight
     },
     routeToArticleNode: function() {
-        var t = [], n = this.articleNode();
-        while (n) {
-            var r = {};
-            r.tagName = n.tagName;
-            var i = n.getAttribute("id");
-            i && (r.id = i), this.classNameIsSignificantInRouteComputation(n.className) && (r.className = n.className), r.index = 1;
-            for (var s = n.previousElementSibling; s; s = s.previousElementSibling)
-                this.shouldIgnoreInRouteComputation(s) || r.index++;
-            t.unshift(r), n = n.parentElement
+        for (var e = [], t = this.articleNode(); t;) {
+            var i = {};
+            i.tagName = t.tagName;
+            var n = t.getAttribute("id");
+            n && (i.id = n), this.classNameIsSignificantInRouteComputation(t.className) && (i.className = t.className), i.index = 1;
+            for (var r = t.previousElementSibling; r; r = r.previousElementSibling)
+                this.shouldIgnoreInRouteComputation(r) || i.index++;
+            e.unshift(i), t = t.parentElement
         }
-        return t
+        return e
     },
-    adjustArticleNode: function() {
-        if (!this.article)
-            return;
-        var t;
-        for (t = this.article.element; t; t = t.parentElement)
-            if (VeryPositiveClassNameRegEx.test(t.className)) {
-                this.article.element = t;
-                return
+    adjustArticleNodeUpwardIfNecessary: function() {
+        if (this.article) {
+            var e;
+            for (e = this.article.element; e; e = e.parentElement)
+                if (VeryPositiveClassNameRegEx.test(e.className))
+                    return void (this.article.element = e);
+            if (e = this.article.element, "HEADER" === e.tagName && "ARTICLE" === e.parentElement.tagName)
+                return void (this.article.element = e.parentElement);
+            var t = e.previousElementSibling;
+            if (t && "FIGURE" === t.tagName && "ARTICLE" === e.parentElement.tagName)
+                return void (this.article.element = e.parentElement);
+            var i = "SECTION" === e.tagName ? e : nearestAncestorElementWithTagName(e, "SECTION", ["ARTICLE"]);
+            if (i) {
+                var n = i.parentElement,
+                    r = function() {
+                        for (var e = n.children, t = e.length, r = 0; t > r; ++r) {
+                            var a = e[r],
+                                l = a.tagName;
+                            if (a !== i && ("SECTION" === l || "HEADER" === l))
+                                return !0
+                        }
+                        return !1
+                    }();
+                if (r && (/\barticleBody\b/.test(n.getAttribute("itemprop")) || "MAIN" === n.tagName || "main" === n.getAttribute("role") || "ARTICLE" === n.tagName || n === this.contentDocument.body))
+                    return void (this.article.element = n)
             }
-        t = this.article.element;
-        if (t.tagName === "SECTION" && t.parentElement && t.parentElement.getAttribute("itemprop") === "articleBody") {
-            this.article.element = t.parentElement;
-            return
-        }
-        t = this.article.element;
-        if (t.getAttribute("id") ||!t.className)
-            return;
-        var n = t.tagName, r = t.className, i = t.parentElement, s = i.children;
-        for (var o = 0, u = s.length; o < u; ++o) {
-            var a = s[o];
-            if (a === t)
-                continue;
-            if (a.tagName !== n || a.className !== r)
-                continue;
-            var f = CandidateElement.candidateIfElementIsViable(a, this.contentDocument, !0);
-            if (!f || f.finalScore() < ReaderMinimumScore)
-                continue;
-            this.article.element = i;
-            return
+            const a = /intro/i,
+                l = /body/i;
+            if (e = this.article.element, a.test(e.className) && e.nextElementSibling && l.test(e.nextElementSibling.className) || l.test(e.className) && e.previousElementSibling && a.test(e.previousElementSibling.className))
+                return void (this.article.element = e.parentElement);
+            if ("ARTICLE" !== e.tagName) {
+                var o = e.parentElement.closest("*[itemprop='articleBody']");
+                if (o && o.parentElement.closest(SchemaDotOrgArticleContainerSelector))
+                    return void (this.article.element = o)
+            }
+            var s = e.closest("article");
+            if (s) {
+                e = unwrappedArticleContentElement(e);
+                var c = elementDepth(e);
+                "P" !== e.tagName || e.className || (e = e.parentElement, c--);
+                var m = elementsMatchingClassesInClassListIgnoringCommonLayoutClassNames(e.classList, this.contentDocument);
+                1 === m.length && (m = elementsMatchingClassesInClassListIgnoringClassesWithNumericSuffix(e.classList, this.contentDocument));
+                for (var h = m.length, d = 0; h > d; ++d) {
+                    var u = m[d];
+                    if (e !== u && c === elementDepth(u) && isElementVisible(u) && !u.querySelector("article") && dominantFontFamilyAndSizeForElement(e) === dominantFontFamilyAndSizeForElement(u))
+                        return void (this.article.element = s)
+                }
+            }
+            if (e = this.article.element, !e.getAttribute("id") && e.className) {
+                var g = e.tagName,
+                    f = e.className,
+                    p = e.parentElement;
+                if (p)
+                    for (var v = p.children, d = 0, E = v.length; E > d; ++d) {
+                        var N = v[d];
+                        if (N !== e && N.tagName === g && N.className === f) {
+                            var S = CandidateElement.candidateIfElementIsViable(N, this.contentDocument, !0);
+                            if (S && !(S.finalScore() < ReaderMinimumScore))
+                                return void (this.article.element = p)
+                        }
+                    }
+            }
         }
     },
     findArticleBySearchingWhitelist: function() {
-        var t = ListOfHostnameAndTrustedArticleNodeSelectorPairs.length;
-        for (var n = 0; n < t; ++n) {
-            var r = ListOfHostnameAndTrustedArticleNodeSelectorPairs[n], i = r[0];
-            if (!i.test(this.contentDocument.location.hostname))
-                continue;
-            var s = r[1], o = this.contentDocument.querySelectorAll(s);
-            if (o.length === 1)
-                return new CandidateElement(o[0], this.contentDocument)
-        }
-        return null
+        var e,
+            t = this.contentDocument;
+        return findArticleNodeSelectorsInWhitelistForHostname(t.location.hostname, function(i) {
+            var n = t.querySelectorAll(i);
+            return 1 === n.length ? (e = new CandidateElement(n[0], t), !0) : void 0
+        }), e
     },
-    articleNode: function(t) {
-        return this.didSearchForArticleNode || (this.article = this.findArticleBySearchingWhitelist(), this.article || (this.article = this.findArticleBySearchingAllElements()), this.article || (this.article = this.findArticleByVisualExamination()), !this.article && t && (this.article = this.findArticleBySearchingAllElements(!0)), this.adjustArticleNode(), this.didSearchForArticleNode=!0, this.article && this.articleIsLTR()), this.article ? this.article.element : null
+    articleNode: function(e) {
+        return this.didSearchForArticleNode || (this.article = this.findArticleBySearchingWhitelist(), this.article || (this.article = this.findArticleBySearchingAllElements()), this.article || (this.article = this.findArticleByVisualExamination()), this.article || (this.article = this.findArticleFromMetadata()), !this.article && e && (this.article = this.findArticleBySearchingAllElements(!0)), this.adjustArticleNodeUpwardIfNecessary(), this.article && (this.article.element = unwrappedArticleContentElement(this.article.element)), this.didSearchForArticleNode = !0, this.article && this.articleIsLTR()), this.article ? this.article.element : null
     },
     extraArticleNode: function() {
-        return this.didSearchForArticleNode || this.articleNode(), this.didSearchForExtraArticleNode || (this.extraArticle = this.findExtraArticle(), this.didSearchForExtraArticleNode=!0), this.extraArticle ? this.extraArticle.element : null
+        return this.didSearchForArticleNode || this.articleNode(), this.didSearchForExtraArticleNode || (this.extraArticle = this.findExtraArticle(), this.didSearchForExtraArticleNode = !0), this.extraArticle ? this.extraArticle.element : null
     },
     cacheWindowScrollPosition: function() {
         this._cachedScrollY = window.scrollY, this._cachedScrollX = window.scrollX
@@ -802,921 +1107,1299 @@ CandidateElement = function(e, t) {
     contentTextStyle: function() {
         return this._cachedContentTextStyle ? this._cachedContentTextStyle : (this._cachedContentTextStyle = contentTextStyleForNode(this.contentDocument, this.articleNode()), this._cachedContentTextStyle || (this._cachedContentTextStyle = getComputedStyle(this.articleNode())), this._cachedContentTextStyle)
     },
-    commaCountIsLessThan: function(t, n) {
-        var r = 0, i = t.textContent, s =- 1;
-        while (r < n && (s = i.indexOf(",", s + 1)) >= 0)
-            r++;
-        return r < n
+    commaCountIsLessThan: function(e, t) {
+        for (var i = 0, n = e.textContent, r = -1; t > i && (r = n.indexOf(",", r + 1)) >= 0;)
+            i++;
+        return t > i
     },
-    calculateLinkDensity: function(t) {
-        var n = removeWhitespace(t.textContent).length;
-        if (!n)
+    calculateLinkDensityForPruningElement: function(e, t) {
+        var i = removeWhitespace(e.textContent).length;
+        if (!i)
             return 0;
-        var r = t.getElementsByTagName("a"), i = 0, s = r.length;
-        for (var o = 0; o < s; ++o)
-            i += removeWhitespace(r[o].textContent).length;
-        return i / n
+        for (var n = this.article.element, r = function() {
+                for (var t = e.originalElement; t && t !== n; t = t.parentElement)
+                    if ("none" !== getComputedStyle(t)["float"])
+                        return t;
+                return null
+            }(), a = e.getElementsByTagName("a"), l = 0, o = a.length, s = 0; o > s; ++s) {
+            var c = a[s];
+            !r && c.href && t && t === dominantFontFamilyAndSizeForElement(c.originalElement) || (l += removeWhitespace(c.textContent).length)
+        }
+        return l / i
     },
-    shouldPruneElement: function(t, n) {
-        const r = .33, i = .5, s = .2, o = 25, u = 4e4;
-        var a = t.tagName;
-        if (!t.parentElement)
+    shouldPruneElement: function(e, t, i) {
+        const n = .33,
+            r = .5,
+            a = .2,
+            l = 25,
+            o = 4e4;
+        var s = e.tagName;
+        if (!e.parentElement)
             return !1;
-        if (a === "IFRAME")
-            return shouldPruneIframe(t, this.contentDocument);
-        if (a !== "OBJECT" && a !== "EMBED" && a !== "CANVAS") {
-            var f=!1, l = t.childNodes.length;
-            for (var c = 0; c < l; ++c) {
-                var h = t.childNodes[c], p = h.nodeType;
-                if (p === Node.ELEMENT_NODE || p === Node.TEXT_NODE&&!isNodeWhitespace(h)) {
-                    f=!0;
+        if (t.classList.contains("footnotes"))
+            return !1;
+        if ("FIGURE" === e.parentElement.tagName && e.querySelector("img"))
+            return !1;
+        if ("IFRAME" === s)
+            return shouldPruneIframe(e, this.contentDocument);
+        if ("OBJECT" !== s && "EMBED" !== s && "CANVAS" !== s) {
+            for (var c = !1, m = e.childNodes.length, h = 0; m > h; ++h) {
+                var d = e.childNodes[h],
+                    u = d.nodeType;
+                if (u === Node.ELEMENT_NODE || u === Node.TEXT_NODE && !isNodeWhitespace(d)) {
+                    c = !0;
                     break
                 }
             }
-            if (!f) {
-                if (a === "P") {
-                    var d = t.previousSibling, v = t.nextSibling;
-                    if (d && d.nodeType === Node.TEXT_NODE&&!isNodeWhitespace(d) && v && v.nodeType === Node.TEXT_NODE&&!isNodeWhitespace(v))
+            if (!c) {
+                if ("P" === s) {
+                    var g = e.previousSibling,
+                        f = e.nextSibling;
+                    if (g && g.nodeType === Node.TEXT_NODE && !isNodeWhitespace(g) && f && f.nodeType === Node.TEXT_NODE && !isNodeWhitespace(f))
                         return !1
                 }
                 return !0
             }
-            if (a === "P")
+            if ("P" === s)
                 return !1
         }
-        if (a === "CANVAS")
-            return t.parentNode.tagName === "CUFON";
-        var m = 0;
-        if (n) {
-            if (VeryNegativeClassNameRegEx.test(n.className))
+        if ("CANVAS" === s) {
+            if (window.innerWidth === t.width && window.innerHeight === t.height)
                 return !0;
-            var g = n.className, y = n.getAttribute("id");
-            PositiveRegEx.test(g) && m++, PositiveRegEx.test(y) && m++, NegativeRegEx.test(g) && m--, NegativeRegEx.test(y) && m--
+            const p = /progressive/i;
+            return p.test(t.className) && "IMG" === t.nextElementSibling.tagName ? !0 : canvasElementHasNoUserVisibleContent(t) ? !0 : "CUFON" === e.parentNode.tagName
         }
-        if (m < 0)
-            return !0;
-        if (t.querySelector(".tweet-wrapper"))
+        if (e.closest("figure") && e.querySelector("picture"))
             return !1;
-        if (a === "UL" || a === "OL") {
-            if (n.querySelector("iframe") && n.querySelector("script"))
+        var v = 0;
+        if (t) {
+            if (VeryNegativeClassNameRegEx.test(t.className))
                 return !0;
-            var b = n.children, w = b.length;
-            if (!w)
+            var E = t.className,
+                N = t.getAttribute("id");
+            PositiveRegEx.test(E) && v++, PositiveRegEx.test(N) && v++, NegativeRegEx.test(E) && v--, NegativeRegEx.test(N) && v--
+        }
+        if (0 > v)
+            return !0;
+        if (elementIsProtected(e) || e.querySelector(".tweet-wrapper"))
+            return !1;
+        if ("UL" === s || "OL" === s) {
+            if (t.querySelector("iframe") && t.querySelector("script"))
                 return !0;
-            var E = 0, S = 0;
-            for (var c = 0; c < w; ++c)
-                SharingRegex.test(b[c].className) && E++, NegativeRegEx.test(b[c].className) && S++;
-            return E / w >= MinimumRatioOfListItemsBeingRelatedToSharingToPruneEntireList?!0 : S / w >= MinimumRatioOfListItemsBeingRelatedToSharingToPruneEntireList?!0 : !1
+            var S = t.children,
+                A = S.length;
+            if (!A)
+                return !0;
+            for (var y = 0, T = 0, h = 0; A > h; ++h)
+                SharingRegex.test(S[h].className) && y++, NegativeRegEx.test(S[h].className) && T++;
+            return y / A >= MinimumRatioOfListItemsBeingRelatedToSharingToPruneEntireList ? !0 : T / A >= MinimumRatioOfListItemsBeingRelatedToSharingToPruneEntireList
         }
-        if (a === "OBJECT") {
-            var x = t.querySelector("embed[src]"), T = x ? anchorForURL(x.src, this.contentDocument): null;
-            if (T && HostnamesKnownToContainEmbeddableMediaRegex.test(T.hostname))
+        if ("OBJECT" === s) {
+            var b = e.querySelector("embed[src]"),
+                C = b ? anchorForURL(b.src, this.contentDocument) : null;
+            if (C && hostnameMatchesHostKnownToContainEmbeddableMedia(C.hostname))
                 return !1;
-            var N = t.getAttribute("data");
-            return T = N ? anchorForURL(N, this.contentDocument) : null, T && HostnamesKnownToContainEmbeddableMediaRegex.test(T.hostname)?!1 : !0
+            var D = e.getAttribute("data");
+            return C = D ? anchorForURL(D, this.contentDocument) : null, !C || !hostnameMatchesHostKnownToContainEmbeddableMedia(C.hostname)
         }
-        if (t.childElementCount === 1) {
-            var C = t.firstElementChild;
-            if (C.tagName === "A")
+        if (1 === e.childElementCount) {
+            var x = e.firstElementChild;
+            if ("A" === x.tagName)
                 return !1;
-            if (C.tagName === "SPAN" && C.className === "converted-anchor" && nearestAncestorElementWithTagName(C, "TABLE"))
+            if ("SPAN" === x.tagName && "converted-anchor" === x.className && nearestAncestorElementWithTagName(x, "TABLE"))
                 return !1
         }
-        var k = t.getElementsByTagName("img"), L = k.length;
-        if (L) {
-            var A = 0;
-            for (var c = 0; c < L; ++c) {
-                var O = k[c].originalElement;
-                if (!isElementVisible(O))
-                    continue;
-                var M = cachedElementBoundingRect(O);
-                A += M.width / L * (M.height / L)
+        var I = e.getElementsByTagName("img"),
+            R = I.length;
+        if (R) {
+            for (var L = 0, h = 0; R > h; ++h) {
+                var M = I[h].originalElement;
+                if (isElementVisible(M)) {
+                    var F = cachedElementBoundingRect(M);
+                    L += F.width / R * (F.height / R)
+                }
             }
-            if (A > u)
+            if (L > o)
                 return !1
         }
-        if (!this.commaCountIsLessThan(t, 10))
+        if (!this.commaCountIsLessThan(e, 10))
             return !1;
-        var _ = t.getElementsByTagName("p").length, D = t.getElementsByTagName("br").length, P = _ + Math.floor(D / 2);
-        if (L > P)
+        var B = e.getElementsByTagName("p").length,
+            P = e.getElementsByTagName("br").length,
+            _ = B + Math.floor(P / 2);
+        if (R > _)
             return !0;
-        if (t.getElementsByTagName("li").length > P)
+        if (e.getElementsByTagName("li").length > _ && dominantFontFamilyAndSizeForElement(t.querySelector("li")) !== i)
             return !0;
-        if (t.getElementsByTagName("input").length / P > r)
+        if (e.getElementsByTagName("input").length / _ > n)
             return !0;
-        if (t.textContent.length < o && L !== 1)
+        if (e.textContent.length < l && 1 !== R)
             return !0;
-        if (t.querySelector("embed"))
+        if (e.querySelector("embed"))
             return !0;
-        var H = this.calculateLinkDensity(t);
-        if (m >= 1 && H > i)
+        var w = this.calculateLinkDensityForPruningElement(e, i);
+        if (v >= 1 && w > r)
             return !0;
-        if (m < 1 && H > s)
+        if (1 > v && w > a)
             return !0;
-        if (a === "TABLE") {
-            var B = removeWhitespace(t.innerText).length, j = removeWhitespace(n.innerText).length;
-            if (B <= j * .5)
+        if ("TABLE" === s) {
+            var O = removeWhitespace(e.innerText).length,
+                q = removeWhitespace(t.innerText).length;
+            if (.5 * q >= O)
                 return !0
         }
         return !1
     },
-    wordCountIsLessThan: function(t, n) {
-        var r = 0, i = t.textContent, s =- 1;
-        while ((s = i.indexOf(" ", s + 1)) >= 0 && r < n)
-            r++;
-        return r < n
+    wordCountIsLessThan: function(e, t) {
+        for (var i = 0, n = e.textContent, r = -1; (r = n.indexOf(" ", r + 1)) >= 0 && t > i;)
+            i++;
+        return t > i
     },
-    leadingImageIsAppropriateWidth: function(t) {
-        return !this.article ||!t?!1 : t.getBoundingClientRect().width >= this.article.element.getBoundingClientRect().width - ToleranceForLeadingImageWidthToArticleWidthForFullWidthPresentation
+    leadingImageIsAppropriateWidth: function(e) {
+        return this.article && e ? e.getBoundingClientRect().width >= this.article.element.getBoundingClientRect().width - ToleranceForLeadingImageWidthToArticleWidthForFullWidthPresentation : !1
     },
-    newDivFromNode: function(t) {
-        var n = this.contentDocument.createElement("div");
-        return t && (n.innerHTML = t.innerHTML), n
+    newDivFromNode: function(e) {
+        var t = this.contentDocument.createElement("div");
+        return e && (t.innerHTML = e.innerHTML), t
+    },
+    headerElement: function() {
+        if (!this.article)
+            return null;
+        var e = this.article.element.previousElementSibling;
+        if (e && "HEADER" === e.tagName)
+            return e;
+        var t = this._articleTitleElement;
+        if (!t)
+            return null;
+        var i = t.parentElement;
+        if (i && "HEADER" === i.tagName && !this.article.element.contains(i))
+            for (var n = i.querySelectorAll("img"), r = n.length, a = 0; r > a; ++a) {
+                var l = n[a],
+                    o = cachedElementBoundingRect(l);
+                if (o.width >= MainImageMinimumWidthAndHeight && o.height >= MainImageMinimumWidthAndHeight)
+                    return i
+            }
+        return null
     },
     adoptableLeadingImage: function() {
-        const t = 5, n = /credit/, r = /caption/, i = /src|alt/;
-        if (!this.article ||!this.leadingImage ||!this.leadingImageIsAppropriateWidth(this.leadingImage))
+        const e = 5,
+            t = /credit/,
+            i = /caption/,
+            n = /src|alt/;
+        if (!this.article || !this.leadingImage || !this.leadingImageIsAppropriateWidth(this.leadingImage))
             return null;
-        var s = this.leadingImage.parentNode, o = null, u = null, a = s.children.length;
-        if (s.tagName === "DIV" && a > 1 && a < t) {
-            var f = s.cloneNode(!0).querySelectorAll("p, div"), l = f.length;
-            for (var c = 0; c < l; ++c) {
-                var h = f[c];
-                n.test(h.className) ? o = h.cloneNode(!0) : r.test(h.className) && (u = h.cloneNode(!0))
+        var r = this.leadingImage.closest("figure");
+        if (r)
+            return this.cleanArticleNode(r, r.cloneNode(!0), CleaningType.LeadingFigure, !0);
+        var a = this.leadingImage.parentNode,
+            l = null,
+            o = null,
+            s = a.children.length;
+        if ("DIV" === a.tagName && s > 1 && e > s)
+            for (var c = a.cloneNode(!0).querySelectorAll("p, div"), m = c.length, h = 0; m > h; ++h) {
+                var d = c[h];
+                t.test(d.className) ? l = d.cloneNode(!0) : i.test(d.className) && (o = d.cloneNode(!0))
             }
+        for (var u = this.leadingImage.cloneNode(!1), g = u.attributes, h = 0; h < g.length; ++h) {
+            var f = g[h].nodeName;
+            n.test(f) || (u.removeAttribute(f), h--)
         }
-        var p = this.leadingImage.cloneNode(!1), d = p.attributes;
-        for (var c = 0; c < d.length; ++c) {
-            var v = d[c].nodeName;
-            i.test(v) || (p.removeAttribute(v), c--)
+        var p = this.contentDocument.createElement("div");
+        if (p.className = "leading-image", p.appendChild(u), l) {
+            var v = this.newDivFromNode(l);
+            v.className = "credit", p.appendChild(v)
         }
-        var m = this.contentDocument.createElement("div");
-        m.className = "leading-image", m.appendChild(p);
         if (o) {
-            var g = this.newDivFromNode(o);
-            g.className = "credit", m.appendChild(g)
+            var E = this.newDivFromNode(o);
+            E.className = "caption", p.appendChild(E)
         }
-        if (u) {
-            var y = this.newDivFromNode(u);
-            y.className = "caption", m.appendChild(y)
-        }
-        return m
+        return p
     },
-    adoptableArticle: function(t) {
+    articleBoundingRect: function() {
+        return this._articleBoundingRect ? this._articleBoundingRect : (this._articleBoundingRect = cachedElementBoundingRect(this.article.element), this._articleBoundingRect)
+    },
+    adoptableArticle: function(e) {
         if (this._adoptableArticle)
             return this._adoptableArticle.cloneNode(!0);
         clearCachedElementBoundingRects(), this.cacheWindowScrollPosition();
-        var n = this.articleNode(t);
-        this._adoptableArticle = n ? n.cloneNode(!0) : null;
-        if (!this._adoptableArticle)
+        var t = this.articleNode(e);
+        if (this._adoptableArticle = t ? t.cloneNode(!0) : null, !this._adoptableArticle)
             return this._adoptableArticle;
-        this._articleBoundingRect = cachedElementBoundingRect(this.article.element), this._adoptableArticle = this.cleanArticleNode(n, this._adoptableArticle, !1);
-        if (this._adoptableArticle.tagName === "P") {
-            var r = document.createElement("div");
-            r.appendChild(this._adoptableArticle), this._adoptableArticle = r
+        if (this._adoptableArticle = this.cleanArticleNode(t, this._adoptableArticle, CleaningType.MainArticleContent, !1), "P" === this._adoptableArticle.tagName) {
+            var i = document.createElement("div");
+            i.appendChild(this._adoptableArticle), this._adoptableArticle = i
         }
-        var i = this.extraArticleNode();
-        if (i) {
-            var s = this.cleanArticleNode(i, i.cloneNode(!0), !0);
-            s && (this.extraArticle.isPrepended ? this._adoptableArticle.insertBefore(s, this._adoptableArticle.firstChild) : this._adoptableArticle.appendChild(s));
-            var o = cachedElementBoundingRect(this.article.element), u = cachedElementBoundingRect(this.extraArticle.element), a = {
-                top: Math.min(o.top, u.top),
-                right: Math.max(o.right, u.right),
-                bottom: Math.max(o.bottom, u.bottom),
-                left: Math.min(o.left, u.left)
-            };
-            a.width = a.right - a.left, a.height = a.bottom - a.top, this._articleBoundingRect = a
+        var n = this.extraArticleNode();
+        if (n) {
+            var r = this.cleanArticleNode(n, n.cloneNode(!0), CleaningType.MainArticleContent, !0);
+            r && (this.extraArticle.isPrepended ? this._adoptableArticle.insertBefore(r, this._adoptableArticle.firstChild) : this._adoptableArticle.appendChild(r));
+            var a = cachedElementBoundingRect(this.article.element),
+                l = cachedElementBoundingRect(this.extraArticle.element),
+                o = {
+                    top: Math.min(a.top, l.top),
+                    right: Math.max(a.right, l.right),
+                    bottom: Math.max(a.bottom, l.bottom),
+                    left: Math.min(a.left, l.left)
+                };
+            o.width = o.right - o.left, o.height = o.bottom - o.top, this._articleBoundingRect = o
         }
         this._articleTextContent = this._adoptableArticle.innerText;
-        var f = this.adoptableLeadingImage();
-        return f && this._adoptableArticle.insertBefore(f, this._adoptableArticle.firstChild), this._adoptableArticle
+        var s = this.headerElement();
+        if (this.leadingImage && (!s || !s.contains(this.leadingImage))) {
+            var c = this.adoptableLeadingImage();
+            c && this._adoptableArticle.insertBefore(c, this._adoptableArticle.firstChild)
+        }
+        var m = !!s;
+        if (m && n && (n === s && (m = !1), m)) {
+            var h = n.compareDocumentPosition(s);
+            (h & Node.DOCUMENT_POSITION_CONTAINS || h & Node.DOCUMENT_POSITION_CONTAINED_BY) && (m = !1)
+        }
+        if (m) {
+            var d = this.cleanArticleNode(s, s.cloneNode(!0), CleaningType.MainArticleContent, !0);
+            d && this._adoptableArticle.insertBefore(d, this._adoptableArticle.firstChild)
+        }
+        return this._adoptableArticle
     },
-    elementPinToEdge: function(t) {
-        const n = {
-            AREA: 1,
-            BR: 1,
-            CANVAS: 1,
-            EMBED: 1,
-            FRAME: 1,
-            HR: 1,
-            IMG: 1,
-            INPUT: 1
-        }, r = 120;
-        if (window.scrollY < r)
+    elementPinToEdge: function(e) {
+        const t = {
+                AREA: 1,
+                BR: 1,
+                CANVAS: 1,
+                EMBED: 1,
+                FRAME: 1,
+                HR: 1,
+                IMG: 1,
+                INPUT: 1
+            },
+            i = 120;
+        if (window.scrollY < i)
             return null;
-        var i = cachedElementBoundingRect(t), s = t.ownerDocument.elementFromPoint((i.left + i.right) / 2, 0);
-        s && s.tagName in n && (s = s.parentElement);
-        var o = s;
-        while (o && o !== t)
-            o = o.parentNode;
-        return o ? s : null
+        var n = cachedElementBoundingRect(e),
+            r = e.ownerDocument.elementFromPoint((n.left + n.right) / 2, 0);
+        r && r.tagName in t && (r = r.parentElement);
+        for (var a = r; a && a !== e;)
+            a = a.parentNode;
+        return a ? r : null
     },
     dominantContentSelectorAndDepth: function(e) {
         const t = 2;
-        var n = {}, r = {};
+        var i = {},
+            n = {};
         walkElementSubtree(e, t, function(e, t) {
-            if (!isElementVisible
-            (e))
-                return;
-            var i = selectorForElement(e) + " | " + t;
-            r[i] ? r[i] += 1 : (r[i] = 1, n[i] = e)
+            if (isElementVisible(e)) {
+                var r = selectorForElement(e) + " | " + t;
+                n[r] ? n[r] += 1 : (n[r] = 1, i[r] = e)
+            }
         });
-        var i, s = arrayOfKeysAndValuesOfObjectSortedByValueDescending(r);
-        switch (s.length) {
+        var r,
+            a = arrayOfKeysAndValuesOfObjectSortedByValueDescending(n);
+        switch (a.length) {
         case 0:
             break;
         case 1:
-            i = s[0].key;
+            r = a[0].key;
             break;
         default:
-            var o = s[0];
-            o.value > s[1].value && (i = o.key)
+            var l = a[0];
+            l.value > a[1].value && (r = l.key)
         }
-        if (!i)
+        if (!r)
             return null;
-        var u = n[i];
+        var o = i[r];
         return {
-            selector: selectorForElement(u),
-            depth: depthOfElementWithinElement(u, e)
+            selector: selectorForElement(o),
+            depth: depthOfElementWithinElement(o, e)
         }
     },
     functionToPreventPruningElementDueToInvisibility: function() {
-        const e = [[/nytimes.com/, function(e, t) {
-            var n = e;
-            if (!t)
-                return !1;
-            while (n && n !== t) {
-                if (n.classList.contains("hidden"))
-                    return !0;
-                n = n.parentElement
+        var e = functionToPreventPruningDueToInvisibilityInWhitelistForHostname(this.contentDocument.location.hostname);
+        return e || function() {
+                return !1
             }
-            return !1
-        }
-        ]];
-        var t = e.length;
-        for (var n = 0; n < t; ++n) {
-            var r = e[n], i = r[0];
-            if (i.test(this.contentDocument.location.hostname))
-                return r[1]
-        }
-        return function() {
-            return !1
-        }
     },
-    cleanArticleNode: function(t, n, r) {
-        function S(e) {
-            f += e, l && (l += e), c && (c += e), h && (h += e), p && (p += e)
+    cleanArticleNode: function(e, t, i, n) {
+        function r(e) {
+            p += e, v && (v += e), E && (E += e), N && (N += e), S && (S += e)
         }
-        function x() {
-            l === 1 && (l = 0), c === 1 && (c = 0), h === 1 && (h = 0), p === 1 && (p = 0)
+        function a() {
+            1 === v && (v = 0), 1 === E && (E = 0), 1 === N && (N = 0), 1 === S && (S = 0)
         }
-        function T() {
-            const e = .8;
-            var n = cachedElementBoundingRect(t);
-            if (n.width === 0 || n.height === 0)
+        function l() {
+            const t = .8;
+            var i = cachedElementBoundingRect(e);
+            if (0 === i.width || 0 === i.height)
                 return !0;
-            var r = childrenWithParallelStructure(t), i = r.length, s;
-            if (i) {
-                s = [];
-                for (var o = 0; o < i; ++o) {
-                    var u = r[o];
-                    if (getComputedStyle(u).float === "none") {
-                        var a = u.children, f = a.length;
-                        for (var l = 0; l < f; ++l)
-                            s.push(a[l])
-                        } else
-                            s.push(u)
-                        }
+            var n,
+                r = childrenWithParallelStructure(e),
+                a = r.length;
+            if (a) {
+                n = [];
+                for (var l = 0; a > l; ++l) {
+                    var o = r[l];
+                    if ("none" === getComputedStyle(o)["float"])
+                        for (var s = o.children, c = s.length, m = 0; c > m; ++m)
+                            n.push(s[m]);
+                    else
+                        n.push(o)
+                }
             } else
-                s = t.children;
-            var c = s.length, h = 0;
-            for (var o = 0; o < c; ++o) {
-                var p = s[o];
-                getComputedStyle(p).float !== "none" && (h += p.innerText.length)
+                n = e.children;
+            for (var h = n.length, d = 0, l = 0; h > l; ++l) {
+                var u = n[l];
+                "none" !== getComputedStyle(u)["float"] && (d += u.innerText.length)
             }
-            var d = t.innerText.length, v = h / d;
-            return v > e
+            var g = e.innerText.length,
+                f = d / g;
+            return f > t
         }
-        function N(e) {
-            const n = 50;
-            if (cachedElementBoundingRect(e).height > n)
+        function o(t) {
+            const i = 50;
+            if (cachedElementBoundingRect(t).height > i)
                 return !1;
-            const r = {
+            const n = {
                 UL: 1,
                 LI: 1,
                 NAV: 1
             };
-            return r[e.tagName]?!0 : e.parentElement === t&&!e.nextElementSibling?!0 : !1
+            return n[t.tagName] ? !0 : t.parentElement === e && !t.nextElementSibling
         }
-        const i = {
-            FORM: 1,
-            SCRIPT: 1,
-            STYLE: 1,
-            LINK: 1
-        }, s = {
-            DIV: 1,
-            TABLE: 1,
-            OBJECT: 1,
-            UL: 1,
-            CANVAS: 1,
-            P: 1,
-            IFRAME: 1,
-            ASIDE: 1,
-            SECTION: 1,
-            FOOTER: 1,
-            NAV: 1,
-            OL: 1
-        }, o = {
-            I: 1,
-            EM: 1
-        }, u = {
-            B: 1,
-            STRONG: 1,
-            H1: 1,
-            H2: 1,
-            H3: 1,
-            H4: 1,
-            H5: 1,
-            H6: 1
-        };
-        var a = [], f = 0, l = 0, c = 0, h = 0, p = 0, d = t, v = d.ownerDocument.defaultView, m = n, g = this.articleTitle(), y = this._articleTitleElement, b = this.elementPinToEdge(t), w = null, E = isElementVisible(t), C = this.dominantContentSelectorAndDepth(t), k = T(), L = new Set;
+        function s(e, t) {
+            const i = .9;
+            return !(cachedElementBoundingRect(e).height > i * cachedElementBoundingRect(t).height)
+        }
+        function c(e, t) {
+            const i = 1.2,
+                n = 1.4;
+            if (t && U) {
+                var r = t > n * U || V.test(A.className) && t > i * U;
+                r && !e.closest(".pullquote") && (e.classList.add("pullquote"), e.classList.contains("float") || (e.style.width = null, cleanStyleAndClassList(e)))
+            }
+        }
+        function m(e, t) {
+            for (var i = e[t]; i; i = i[t])
+                if (!isNodeWhitespace(i) && i.nodeType !== Node.COMMENT_NODE)
+                    return !1;
+            return !0
+        }
+        const h = {
+                FORM: 1,
+                SCRIPT: 1,
+                STYLE: 1,
+                LINK: 1,
+                BUTTON: 1
+            },
+            d = {
+                DIV: 1,
+                TABLE: 1,
+                OBJECT: 1,
+                UL: 1,
+                CANVAS: 1,
+                P: 1,
+                IFRAME: 1,
+                ASIDE: 1,
+                SECTION: 1,
+                FOOTER: 1,
+                NAV: 1,
+                OL: 1,
+                MENU: 1,
+                svg: 1
+            },
+            u = {
+                I: 1,
+                EM: 1
+            },
+            g = {
+                B: 1,
+                STRONG: 1,
+                H1: 1,
+                H2: 1,
+                H3: 1,
+                H4: 1,
+                H5: 1,
+                H6: 1
+            };
+        var f = [],
+            p = 0,
+            v = 0,
+            E = 0,
+            N = 0,
+            S = 0,
+            A = e,
+            y = A.ownerDocument.defaultView,
+            T = t,
+            b = this.articleTitle(),
+            C = this._articleTitleElement,
+            D = (this.articleSubhead(), this._articleSubheadElement),
+            x = C && cachedElementBoundingRect(C).top > cachedElementBoundingRect(e).bottom,
+            I = this.elementPinToEdge(e),
+            R = null,
+            L = isElementVisible(e),
+            M = new Set([C, D]),
+            F = new Set;
+        if (i === CleaningType.MainArticleContent) {
+            this.updateArticleBylineAndDateElementsIfNecessary();
+            var B = this.articleBylineElement();
+            B && F.add(B);
+            var P = this.articleDateElement();
+            P && F.add(P)
+        }
+        var _ = this.dominantContentSelectorAndDepth(e),
+            w = l(),
+            O = new Set;
         this.previouslyDiscoveredPageURLStrings.forEach(function(e) {
-            L.add(e)
+            O.add(e)
         });
-        var A = this.nextPageURL();
-        A && L.add(A);
-        var O = null;
-        this._articleTitleElement && (O = cachedElementBoundingRect(this._articleTitleElement));
-        var M = this.functionToPreventPruningElementDueToInvisibility();
-        while (d) {
-            var _ = null, D = m.tagName;
-            m.originalElement = d, d === b && (w = m), D in i && (_ = m), !_ && d === y && (_ = m);
-            if (!_ && (D === "H1" || D === "H2")) {
-                var P = d.offsetTop - t.offsetTop;
-                if (P < HeaderMinimumDistanceFromArticleTop) {
-                    var H = innerTextOrTextContent(d), B = H.length * HeaderLevenshteinDistanceToLengthRatio;
-                    levenshteinDistance(g, H) <= B && (_ = m)
+        var q = this.nextPageURL();
+        q && O.add(q);
+        var k = null;
+        this._articleTitleElement && (k = cachedElementBoundingRect(this._articleTitleElement));
+        var W = this.functionToPreventPruningElementDueToInvisibility(),
+            H = dominantFontFamilyAndSizeForElement(e),
+            U = dominantFontSizeInPointsFromFontFamilyAndSizeString(H);
+        const V = /pull(ed)?quote/i;
+        for (var z = [], G = []; A;) {
+            var Y = null,
+                X = T.tagName,
+                K = !1;
+            if (T.originalElement = A, A === I && (R = T), X in h && (Y = T), !Y && A !== e && M.has(A) ? Y = T : !Y && A !== e && F.has(A) ? (T.parentElementBeforePruning = T.parentElement, Y = T, z.push(T)) : elementIsAHeader(T) && previousLeafElementForElement(A) === C && T.classList.add("protected"), !Y && ("H1" === X || "H2" === X)) {
+                var j = A.offsetTop - e.offsetTop;
+                if (j < HeaderMinimumDistanceFromArticleTop) {
+                    var J = titleFromHeaderElement(A),
+                        Q = J.length * HeaderLevenshteinDistanceToLengthRatio;
+                    levenshteinDistance(b, J) <= Q && (Y = T)
                 }
             }
-            _ || this.isMediaWikiPage() && /editsection/.test(d.className) && (_ = m);
-            var j;
-            _ || (j = getComputedStyle(d));
-            if (!_ && D === "DIV" && m.parentNode) {
-                var F = d.querySelectorAll("a, blockquote, dl, div, img, ol, p, pre, table, ul"), I = l || j["float"] !== "none";
-                if (!I&&!F.length) {
-                    var q = m.parentNode, R = this.contentDocument.createElement("p");
-                    while (m.firstChild) {
-                        var U = m.firstChild;
-                        R.appendChild(U)
+            if (Y || this.isMediaWikiPage() && /editsection/.test(A.className) && (Y = T), "VIDEO" === X)
+                if (T.getAttribute("src")) {
+                    T.classList.add("protected");
+                    var $ = cachedElementBoundingRect(A);
+                    T.setAttribute("width", $.width), T.setAttribute("height", $.height), T.setAttribute("controls", !0), T.removeAttribute("autoplay"), T.removeAttribute("preload"), T.removeAttribute("style")
+                } else
+                    Y = T;
+            var Z;
+            if (Y || (Z = getComputedStyle(A)), !Y && "DIV" === X && LazyLoadRegex.test(A.className) && !A.innerText) {
+                var ee = lazyLoadingAttributeToCloneForElement(T);
+                if (ee) {
+                    var te = this.contentDocument.createElement("img");
+                    te.setAttribute("src", T.getAttribute(ee)), T.parentNode.replaceChild(te, T), T = te, T.originalElement = A, X = T.tagName, Y = T, T.classList.add("protected")
+                }
+            }
+            if (!Y && "DIV" === X && T.parentNode) {
+                var ie = A.querySelectorAll("a, blockquote, dl, div, img, ol, p, pre, table, ul"),
+                    ne = v || "none" !== Z["float"];
+                if (!ne && !ie.length) {
+                    for (var re = T.parentNode, ae = this.contentDocument.createElement("p"); T.firstChild;) {
+                        var le = T.firstChild;
+                        ae.appendChild(le)
                     }
-                    q.replaceChild(R, m), w === m && (w = R), m = R, m.originalElement = d, D = m.tagName
+                    re.replaceChild(ae, T), R === T && (R = ae), T = ae, T.originalElement = A, X = T.tagName
                 }
             }
-            !_ && m.parentNode && D in s && a.push(m);
-            if (!_) {
-                if (E) {
-                    var z = j.display === "none" || j.visibility !== "visible" || computedStyleIndicatesElementIsInvisibleDueToClipping(j);
-                    if (z) {
-                        var W = C ? f === C.depth && selectorForElement(d) === C.selector: !1;
-                        !W&&!M(d, t) && (_ = m)
+            if (!Y && T.parentNode && X in d && f.push(T), Y || (isElementPositionedOffScreen(A) ? Y = T : A === e || v || "none" === Z["float"] || w || !(cachedElementBoundingRect(A).height >= FloatMinimumHeight || A.childElementCount > 1) || (v = 1)), !Y) {
+                for (var oe = T.attributes, se = 0; se < oe.length; ++se) {
+                    var ce = oe[se].nodeName;
+                    AttributesToRemoveRegEx.test(ce) && (T.removeAttribute(ce), se--)
+                }
+                if (i === CleaningType.MetadataContent && ("|" === T.innerText ? (T.innerText = "", T.classList.add("delimeter")) : "FIGURE" === X && (Y = T)), "both" === Z.clear && T.classList.add("clear"), "UL" === X || "OL" === X || "MENU" === X) {
+                    if (k && cachedElementBoundingRect(A).top < k.top)
+                        Y = T;
+                    else if ("none" === Z["list-style-type"] && "none" === Z["background-image"]) {
+                        for (var me = A.children, he = me.length, de = !0, se = 0; he > se; ++se) {
+                            var ue = getComputedStyle(me[se]);
+                            if ("none" !== ue["list-style-type"] || 0 !== parseInt(ue["-webkit-padding-start"])) {
+                                de = !1;
+                                break
+                            }
+                        }
+                        de && T.classList.add("list-style-type-none")
+                    }
+                    if (A.querySelector("code")) {
+                        const ge = /monospace|menlo|courier/i;
+                        var fe = dominantFontFamilyAndSizeForElement(A);
+                        ge.test(fe) && (T.classList.add("code-block"), T.classList.add("protected"))
                     }
                 }
-                isElementPositionedOffScreen(d) ? _ = m : d !== t&&!l && j["float"] !== "none"&&!k && (cachedElementBoundingRect(d).height >= FloatMinimumHeight || d.childElementCount > 1) && (l = 1)
-            }
-            if (!_) {
-                var X = m.attributes;
-                for (var V = 0; V < X.length; ++V) {
-                    var $ = X[V].nodeName;
-                    AttributesToRemoveRegEx.test($) && (m.removeAttribute($), V--)
+                if (N || "normal" === Z.fontStyle || (X in u || (T.style.fontStyle = Z.fontStyle), N = 1), !S && "normal" !== Z.fontWeight) {
+                    if (!(X in g)) {
+                        var pe = parseInt(Z.fontWeight),
+                            ve = null;
+                        isNaN(pe) ? ve = Z.fontWeight : 400 >= pe || pe >= 500 && (ve = "bold"), ve && (T.style.fontWeight = ve)
+                    }
+                    S = 1
                 }
-                j.clear === "both" && m.classList.add("clear");
-                if ((D === "UL" || D === "OL") && j["list-style-type"] === "none" && j["background-image"] === "none") {
-                    var J = d.children, K = J.length, Q=!0;
-                    for (var V = 0; V < K; ++V) {
-                        var G = getComputedStyle(J[V]);
-                        if (G["list-style-type"] !== "none" || parseInt(G["-webkit-padding-start"]) !== 0) {
-                            Q=!1;
-                            break
+                if (v && "SECTION" !== X && s(A, e) || "ASIDE" === X) {
+                    var fe = dominantFontFamilyAndSizeForElement(A),
+                        Ee = dominantFontSizeInPointsFromFontFamilyAndSizeString(fe),
+                        Ne = fe && fe === H;
+                    if (1 === v && (cachedElementBoundingRect(A).width <= MaximumFloatWidth ? T.setAttribute("class", "auxiliary float " + Z["float"]) : Ne || T.classList.add("auxiliary")), T.closest(".auxiliary")) {
+                        var Se = A.style.getPropertyValue("width");
+                        if ("table" === Z.display && /%/.test(Se) && parseInt(Se) < 2)
+                            T.style.width = Z.width;
+                        else if (Se)
+                            T.style.width = Se;
+                        else {
+                            var Ae = y.getMatchedCSSRules(A, "", !0);
+                            if (Ae)
+                                for (var ye = Ae.length, se = ye - 1; se >= 0; --se) {
+                                    Se = Ae[se].style.getPropertyValue("width");
+                                    var Te = parseInt(Se);
+                                    if (Se && (isNaN(Te) || Te > 0)) {
+                                        T.style.width = Se;
+                                        break
+                                    }
+                                }
+                        }
+                        1 !== v || Se || (T.style.width = cachedElementBoundingRect(A).width + "px")
+                    }
+                    c(T, Ee)
+                }
+                if ("TABLE" === X)
+                    E || (E = 1);
+                else if ("IMG" === X) {
+                    var ee = lazyLoadingAttributeToCloneForElement(T);
+                    ee && (T.setAttribute("src", T.getAttribute(ee)), T.classList.add("protected"), K = !0), T.removeAttribute("border"), T.removeAttribute("hspace"), T.removeAttribute("vspace");
+                    var be = T.getAttribute("align");
+                    if (T.removeAttribute("align"), "left" !== be && "right" !== be || (T.classList.add("float"), T.classList.add(be)), !v && !K) {
+                        var Ce = cachedElementBoundingRect(A),
+                            De = Ce.width,
+                            xe = Ce.height;
+                        1 === De && 1 === xe ? Y = T : k && xe < MinimumHeightForImagesAboveTheArticleTitle && Ce.bottom < k.top ? Y = T : De < ImageSizeTiny && xe < ImageSizeTiny && T.setAttribute("class", "reader-image-tiny")
+                    }
+                    if (i === CleaningType.MetadataContent) {
+                        var Ce = cachedElementBoundingRect(A);
+                        (Ce.width > MaximumWidthOrHeightOfImageInMetadataSection || Ce.height > MaximumWidthOrHeightOfImageInMetadataSection) && (Y = T)
+                    }
+                } else if ("FONT" === X)
+                    T.removeAttribute("size"), T.removeAttribute("face"), T.removeAttribute("color");
+                else if ("A" === X && T.parentNode) {
+                    var Ie = T.getAttribute("href");
+                    if ("author" === A.getAttribute("itemprop"))
+                        T.classList.add("protected");
+                    else if (Ie && Ie.length && ("#" === Ie[0] || anchorRunsJavaScriptOnActivation(T))) {
+                        if (!E && !T.childElementCount && 1 === T.parentElement.childElementCount && "LI" !== T.parentElement.tagName) {
+                            var Re = this.contentDocument.evaluate("text()", T.parentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+                            Re.snapshotLength || (Y = T)
+                        }
+                        if (!Y) {
+                            var ae = this.contentDocument.createElement("span");
+                            if (1 === T.childElementCount && "IMG" === T.firstElementChild.tagName) {
+                                var Le = T.firstElementChild;
+                                Le.width > AnchorImageMinimumWidth && Le.height > AnchorImageMinimumHeight && ae.setAttribute("class", "converted-image-anchor")
+                            }
+                            for (ae.className || ae.setAttribute("class", "converted-anchor"); T.firstChild;)
+                                ae.appendChild(T.firstChild);
+                            T.parentNode.replaceChild(ae, T), T = ae, R === T && (R = ae)
+                        }
+                    } else if (AdvertisementHostRegex.test(T.host) && !T.innerText)
+                        Y = T;
+                    else if (C && !x && C.compareDocumentPosition(A) & document.DOCUMENT_POSITION_PRECEDING && cachedElementBoundingRect(A).top < cachedElementBoundingRect(C).top)
+                        G.push(T);
+                    else {
+                        var Me = A.children;
+                        1 === Me.length && "IMG" === Me[0].tagName && !A.innerText && anchorLooksLikeDownloadFlashLink(A) && (Y = T)
+                    }
+                } else if ("BLOCKQUOTE" === X || "Q" === X || "DIV" === X && V.test(A.className)) {
+                    var fe = dominantFontFamilyAndSizeForElement(A),
+                        Ee = dominantFontSizeInPointsFromFontFamilyAndSizeString(fe);
+                    c(T, Ee)
+                }
+            }
+            if (Z && L && !K) {
+                var Fe = "none" === Z.display || "visible" !== Z.visibility || computedStyleIndicatesElementIsInvisibleDueToClipping(Z);
+                if (Fe) {
+                    var Be = _ ? p === _.depth && selectorForElement(A) === _.selector : !1;
+                    Be || W(A, e) || (Y = T)
+                }
+            }
+            if (!Y && elementIsCommentBlock(A) && (Y = T), !Y && k && cachedElementBoundingRect(A).top < k.top && VeryLiberalCommentRegex.test(A.className) && T.parentElement && (Y = T), !Y && "A" === X && O.has(A.href)) {
+                for (var Pe, _e, we = A, Oe = T; (we = we.parentElement) && (Oe = Oe.parentElement);) {
+                    const qe = 10;
+                    if (cachedElementBoundingRect(we).top - cachedElementBoundingRect(A).top > qe)
+                        break;
+                    if (we === e)
+                        break;
+                    o(we) && (Pe = we, _e = Oe)
+                }
+                Pe && (Y = _e, A = Pe, T = _e, T.originalElement = A, X = T.tagName), we = null, Oe = null, Pe = null, _e = null
+            }
+            var ke = Y ? null : A.firstElementChild;
+            if (ke)
+                A = ke, T = T.firstElementChild, r(1);
+            else {
+                for (var We; A !== e && !(We = A.nextElementSibling);)
+                    A = A.parentElement, T = T.parentElement, r(-1);
+                if (A === e) {
+                    if (Y && !elementIsProtected(Y))
+                        if (Y.parentElement)
+                            Y.remove();
+                        else if (n)
+                            return null;
+                    break
+                }
+                A = We, T = T.nextElementSibling, a()
+            }
+            if (Y && !elementIsProtected(Y))
+                if (Y.parentElement)
+                    Y.remove();
+                else if (n)
+                    return null
+        }
+        for (var He = t.querySelectorAll("iframe"), Ue = He.length, se = 0; Ue > se; ++se) {
+            var Ve = He[se];
+            if (elementLooksLikeEmbeddedTweet(Ve.originalElement)) {
+                var ze = this.adoptableSimpleTweetFromTwitterIframe(Ve);
+                ze && Ve.parentElement.replaceChild(ze, Ve)
+            }
+            Ve.classList.add("protected"), Ve.setAttribute("sandbox", "allow-scripts allow-same-origin")
+        }
+        for (var se = f.length - 1; se >= 0; --se) {
+            var Ge = f[se];
+            Ge.parentNode && this.shouldPruneElement(Ge, Ge.originalElement, H) && (R === Ge && ((R = Ge.nextElementSibling) || (R = Ge.parentElement)), Ge.remove())
+        }
+        for (var Ye = G.length, se = 0; Ye > se; ++se)
+            G[se].remove();
+        for (var Xe = t.querySelectorAll(".float"), se = 0; se < Xe.length; ++se) {
+            var Ke = !1,
+                je = Xe[se];
+            if (!Ke) {
+                var Je = je.querySelectorAll("a, span.converted-image-anchor"),
+                    Qe = je.querySelectorAll("span.converted-anchor");
+                Ke = je.parentNode && Qe.length > Je.length
+            }
+            if (!Ke) {
+                var $e = je.querySelectorAll("embed, object").length,
+                    Ze = je.originalElement.querySelectorAll("embed, object").length;
+                !$e && Ze && (Ke = !0)
+            }
+            if (!Ke) {
+                for (var et = je.originalElement.getElementsByTagName("img"), tt = et.length, it = 0, nt = 0; tt > nt && (L && isElementVisible(et[nt]) && it++, !(it > 1)); ++nt)
+                    ;
+                if (1 === it) {
+                    var rt = je.getElementsByTagName("img").length;
+                    rt || (Ke = !0)
+                }
+            }
+            if (!Ke) {
+                const at = "img, video, embed, iframe, object, svg";
+                /\S/.test(je.innerText) || je.matches(at) || je.querySelector(at) || (Ke = !0)
+            }
+            Ke && (R === je && ((R = je.nextElementSibling) || (R = je.parentElement)), elementIsProtected(je) || je.remove())
+        }
+        for (var lt = t.querySelectorAll("br"), ot = lt.length, se = ot - 1; se >= 0; --se) {
+            var st = lt[se];
+            st.originalElement && "block" === getComputedStyle(st.originalElement.parentElement).display && (m(st, "nextSibling") || m(st, "previousSibling")) && st.remove()
+        }
+        if (n && !removeWhitespace(t.innerText).length && i !== CleaningType.LeadingFigure)
+            return null;
+        if (R) {
+            var ct = document.createElement("div"),
+                mt = R.originalElement.getBoundingClientRect(),
+                ht = mt.height > 0 ? 100 * mt.top / mt.height : 0;
+            ct.style.position = "relative", ct.style.top = Math.round(-ht) + "%", ct.setAttribute("id", "safari-reader-element-marker"), R.insertBefore(ct, R.firstChild)
+        }
+        for (var dt = {}, Je = t.querySelectorAll("a"), ut = Je.length, se = 0; ut > se; ++se) {
+            var gt = Je[se],
+                ft = gt.style.fontWeight;
+            dt[ft] || (dt[ft] = []), dt[ft].push(gt)
+        }
+        for (var ft in dt) {
+            var pt = dt[ft],
+                vt = pt.length;
+            if (vt === ut)
+                for (var se = 0; vt > se; ++se) {
+                    var gt = pt[se];
+                    gt.style.fontWeight = null, "" === gt.getAttribute("style") && (gt.style = null)
+                }
+        }
+        for (var Et = t.querySelectorAll(".protected"), Nt = Et.length, se = 0; Nt > se; ++se) {
+            var Ge = Et[se];
+            Ge.classList.remove("protected"), Ge.classList.length || Ge.removeAttribute("class")
+        }
+        for (var St = t.querySelectorAll("p.auxiliary"), At = St.length, se = 0; At > se; ++se) {
+            for (var yt = St[se], Tt = [yt], bt = yt.nextElementSibling; bt && "P" === bt.tagName && bt.classList.contains("auxiliary");)
+                Tt.push(bt), bt = bt.nextElementSibling;
+            var Ct = Tt.length;
+            if (Ct > 1) {
+                for (var nt = 0; Ct > nt; ++nt) {
+                    var Dt = Tt[nt];
+                    Dt.classList.remove("auxiliary"), Dt.style.width = null, cleanStyleAndClassList(Dt)
+                }
+                se += Ct - 1
+            }
+        }
+        for (var xt = z.length, se = 0; xt > se; ++se) {
+            var It = z[se],
+                Rt = It.parentElementBeforePruning,
+                Lt = null,
+                Mt = null;
+            if (Rt)
+                var Lt = depthOfElementWithinElement(Rt, t),
+                    Mt = selectorForElement(Rt);
+            var Ft = Rt ? Rt.closest("ul") : null;
+            if (Ft)
+                Ft.remove();
+            else {
+                const Bt = 40;
+                Rt && cachedElementBoundingRect(Rt.originalElement).height < Bt && (!_ || _.selector !== Mt || _.depth !== Lt) ? Rt.remove() : It.remove()
+            }
+        }
+        return t
+    },
+    adoptableSimpleTweetFromTwitterIframe: function(e) {
+        var t = e.originalElement.contentDocument.documentElement,
+            i = t.querySelector("[data-tweet-id].expanded");
+        if (!i)
+            return null;
+        var n = this.contentDocument.createElement("div");
+        n.classList.add("tweet-wrapper");
+        var r = this.contentDocument.createElement("blockquote");
+        r.classList.add("simple-tweet"), n.appendChild(r);
+        var a = i.getAttribute("data-tweet-id");
+        n.setAttribute("data-reader-tweet-id", a);
+        var l = i.querySelector(".dateline"),
+            o = i.querySelector('[data-scribe="element:screen_name"]'),
+            s = i.querySelector('[data-scribe="element:name"]'),
+            c = i.querySelector(".e-entry-title");
+        if (!(l && o && s && c))
+            return n;
+        var m = "&mdash; " + s.innerText + " (" + o.innerText + ")",
+            h = this.contentDocument.createElement("p");
+        h.innerHTML = c.innerHTML, r.appendChild(h), r.insertAdjacentHTML("beforeend", m);
+        var d = this.contentDocument.createElement("span");
+        d.innerHTML = l.innerHTML, r.appendChild(d);
+        for (var u = r.querySelectorAll("img.twitter-emoji"), g = u.length, f = 0; g > f; ++f) {
+            var p = u[f],
+                v = p.getAttribute("alt");
+            if (v && v.length > 0) {
+                var E = this.contentDocument.createElement("span");
+                E.innerText = v, p.parentNode.replaceChild(E, p)
+            }
+        }
+        return n
+    },
+    leadingImageNode: function() {
+        const e = 250,
+            t = .5,
+            i = .9,
+            n = 3;
+        if (!this.article || !this.article.element)
+            return null;
+        for (var r = this.article.element, a = 0; n > a && r.parentNode; ++a) {
+            r = r.parentNode;
+            var l = r.getElementsByTagName("img")[0];
+            if (l && isElementVisible(l)) {
+                var o = cachedElementBoundingRect(l),
+                    s = o.width >= window.innerWidth * i;
+                if (!s && o.height < e)
+                    continue;
+                if (o.width < this._articleWidth * t)
+                    continue;
+                var c = this.article.element.compareDocumentPosition(l);
+                if (!(c & Node.DOCUMENT_POSITION_PRECEDING) || c & Node.DOCUMENT_POSITION_CONTAINED_BY)
+                    continue;
+                if (c = this.extraArticle ? this.extraArticle.element.compareDocumentPosition(l) : null, c && (!(c & Node.DOCUMENT_POSITION_PRECEDING) || c & Node.DOCUMENT_POSITION_CONTAINED_BY))
+                    continue;
+                return l
+            }
+        }
+        return null
+    },
+    pageImageURLFromMetadata: function() {
+        var e = this.contentDocument,
+            t = e.querySelector("meta[property='og:image']");
+        return t || (t = e.querySelector("meta[property='twitter:image']")), t || (t = e.querySelector("meta[property='twitter:image:src']")), t && t.content ? t.content : null
+    },
+    mainImageNode: function() {
+        var e = this.leadingImageNode();
+        if (e)
+            return e;
+        if (this.article && this.article.element)
+            for (var t = this.article.element.querySelectorAll("img"), i = t.length, n = 0; i > n; ++n) {
+                var r = t[n],
+                    a = r._cachedElementBoundingRect;
+                if (a || (a = r.getBoundingClientRect()), a.width >= MainImageMinimumWidthAndHeight && a.height >= MainImageMinimumWidthAndHeight)
+                    return r
+            }
+        return null
+    },
+    articleTitle: function() {
+        function e(e, t) {
+            var i = e ? t.indexOf(e) : -1;
+            return -1 !== i && (0 === i || i + e.length === t.length)
+        }
+        function t(e, t) {
+            return e.host === t.host && e.pathname === t.pathname && e.hash === t.hash
+        }
+        if (this.articleNode()) {
+            if (this._articleTitle)
+                return this._articleTitle;
+            const i = 500,
+                n = 20,
+                r = 8,
+                a = 1.1,
+                l = 1.25,
+                o = /header|title|headline|instapaper_title/i,
+                s = 1.5,
+                c = 1.8,
+                m = 1.5,
+                h = .6,
+                d = 3,
+                u = 1.5,
+                g = 9,
+                f = 1.5,
+                p = /byline|author/i;
+            var v = function(e, t) {
+                    var i = this.contentFromUniqueMetadataSelector(e, t);
+                    if (i) {
+                        var n = this.articleTitleAndSiteNameFromTitleString(i);
+                        n && (i = n.articleTitle)
+                    }
+                    return i
+                }.bind(this),
+                E = function() {
+                    for (var e = this.articleNode(); e; e = e.parentElement)
+                        if (elementIndicatesItIsASchemaDotOrgArticleContainer(e))
+                            return e;
+                    return null
+                }.bind(this)(),
+                N = E ? this.contentFromUniqueMetadataSelector(E, "meta[itemprop=headline]") : "",
+                S = E ? this.contentFromUniqueMetadataSelector(E, "meta[itemprop=alternativeHeadline]") : "",
+                A = this.contentDocument,
+                y = A.title,
+                T = v(A, "head meta[property='og:title']"),
+                b = this.contentFromUniqueMetadataSelector(A, "head meta[property='og:site_name']"),
+                C = v(A, "head meta[name='twitter:title']"),
+                D = v(A, "meta[name='sailthru.headline']"),
+                x = cachedElementBoundingRect(this.articleNode());
+            this.extraArticleNode() && this.extraArticle.isPrepended && (x = cachedElementBoundingRect(this.extraArticleNode()));
+            var I = x.left + x.width / 2,
+                R = x.top,
+                L = R;
+            if (this._articleWidth = x.width, this.leadingImage = this.leadingImageNode(), this.leadingImage) {
+                var M = cachedElementBoundingRect(this.leadingImage);
+                L = (M.top + R) / 2
+            }
+            var F = "h1, h2, h3, h4, h5, .headline, .article_title, .post-title, #hn-headline, .inside-head, .instapaper_title",
+                B = this.article.element.tagName;
+            "DL" !== B && "DD" !== B || (F += ", dt");
+            var P = this.contentDocument.querySelectorAll(F);
+            P = Array.prototype.slice.call(P, 0);
+            const _ = 2;
+            for (var w = A.location, O = this.article.element, q = 0; _ > q; ++q)
+                O.parentElement && (O = O.parentElement);
+            for (var k = O.getElementsByTagName("a"), q = 0, W = k.length; W > q; ++q) {
+                var H = k[q];
+                if (H.offsetTop > this.articleNode().offsetTop + n)
+                    break;
+                if (t(H, w) && "#" !== H.getAttribute("href")) {
+                    P.push(H);
+                    break
+                }
+            }
+            for (var U, V = P.map(titleFromHeaderElement), z = P.length, G = 0, Y = [], X = [], K = [], j = [], J = [], Q = [], q = 0; z > q; ++q) {
+                var $ = P[q],
+                    Z = V[q],
+                    ee = stringSimilarity(y, Z);
+                if (T) {
+                    var te = stringSimilarity(T, Z);
+                    ee += te, te > StringSimilarityToDeclareStringsNearlyIdentical && X.push($)
+                }
+                if (C) {
+                    var ie = stringSimilarity(C, Z);
+                    ee += ie, ie > StringSimilarityToDeclareStringsNearlyIdentical && K.push($)
+                }
+                if (N) {
+                    var ne = stringSimilarity(N, Z);
+                    ee += ne, ne > StringSimilarityToDeclareStringsNearlyIdentical && j.push($)
+                }
+                if (S) {
+                    var re = stringSimilarity(S, Z);
+                    ee += re, re > StringSimilarityToDeclareStringsNearlyIdentical && J.push($)
+                }
+                if (D) {
+                    var ae = stringSimilarity(D, Z);
+                    ee += ae, ae > StringSimilarityToDeclareStringsNearlyIdentical && Q.push($)
+                }
+                ee === G ? Y.push($) : ee > G && (G = ee, Y = [$])
+            }
+            if (1 === X.length ? (U = X[0], U.headerText = titleFromHeaderElement(U)) : 1 === K.length ? (U = K[0], U.headerText = titleFromHeaderElement(U)) : 1 === j.length ? (U = j[0], U.headerText = titleFromHeaderElement(U)) : 1 === Q.length && (U = Q[0],
+            U.headerText = titleFromHeaderElement(U)), !U)
+                for (var q = 0; z > q; ++q) {
+                    var $ = P[q];
+                    if (isElementVisible($)) {
+                        var le = cachedElementBoundingRect($),
+                            oe = le.left + le.width / 2,
+                            se = le.top + le.height / 2,
+                            ce = oe - I,
+                            me = se - L,
+                            he = -1 !== X.indexOf($),
+                            de = -1 !== K.indexOf($),
+                            ue = $.classList.contains("instapaper_title"),
+                            ge = /\bheadline\b/.test($.getAttribute("itemprop")),
+                            fe = -1 !== j.indexOf($),
+                            pe = -1 !== J.indexOf($),
+                            ve = -1 !== Q.indexOf($),
+                            Ee = he || de || ue || ge || fe || pe || ve,
+                            Ne = Math.sqrt(ce * ce + me * me),
+                            Se = Ee ? i : Math.max(i - Ne, 0),
+                            Z = V[q],
+                            Ae = $.getAttribute("property");
+                        if (Ae) {
+                            var ye = /dc.title/i.exec(Ae);
+                            if (ye && ye[0]) {
+                                var Te = this.contentDocument.querySelectorAll('*[property~="' + ye[0] + '"]');
+                                if (1 === Te.length) {
+                                    U = $, U.headerText = Z;
+                                    break
+                                }
+                            }
+                        }
+                        if (!p.test($.className)) {
+                            if (!Ee) {
+                                if (Ne > i)
+                                    continue;
+                                if (oe < x.left || oe > x.right)
+                                    continue
+                            }
+                            if (y && stringsAreNearlyIdentical(Z, y))
+                                Se *= d;
+                            else if (e(Z, y))
+                                Se *= u;
+                            else if (Z.length < r)
+                                continue;
+                            if (Z !== b || !T) {
+                                var be = !1,
+                                    Ce = nearestAncestorElementWithTagName($, "A");
+                                if (Ce || (Ce = $.querySelector("a")), Ce) {
+                                    if ("author" === Ce.getAttribute("rel"))
+                                        continue;
+                                    var De = Ce.host === w.host,
+                                        xe = Ce.pathname === w.pathname;
+                                    if (De && xe)
+                                        Se *= m;
+                                    else {
+                                        if (De && nearestAncestorElementWithTagName($, "LI"))
+                                            continue;
+                                        Se *= h, be = !0
+                                    }
+                                }
+                                var Ie = fontSizeFromComputedStyle(getComputedStyle($));
+                                be || (Se *= Ie / BaseFontSize), Se *= 1 + TitleCandidateDepthScoreMultiplier * elementDepth($);
+                                var Re = parseInt(this.contentTextStyle().fontSize);
+                                parseInt(Ie) > Re * a && (Se *= l), (o.test($.className) || o.test($.getAttribute("id"))) && (Se *= s);
+                                var Le = $.parentElement;
+                                Le && (o.test(Le.className) || o.test(Le.getAttribute("id"))) && (Se *= s), -1 !== Y.indexOf($) && (Se *= c), (!U || Se > U.headerScore) && (U = $, U.headerScore = Se, U.headerText = Z)
+                            }
                         }
                     }
-                    Q && m.classList.add("list-style-type-none")
                 }
-                !h && j.fontStyle !== "normal" && (D in o || (m.style.fontStyle = j.fontStyle), h = 1), !p && j.fontWeight !== "normal" && (D in u || (m.style.fontWeight = j.fontWeight), p = 1);
-                if (l) {
-                    l === 1 && (cachedElementBoundingRect(d).width <= MaximumFloatWidth ? m.setAttribute("class", "auxiliary float " + j["float"]) : m.classList.add("auxiliary"));
-                    var Y = d.style.getPropertyValue("width");
-                    if (Y)
-                        m.style.width = Y;
-                    else {
-                        var Z = v.getMatchedCSSRules(d, "", !0);
-                        if (Z) {
-                            var et = Z.length;
-                            for (var V = et - 1; V >= 0; --V) {
-                                Y = Z[V].style.getPropertyValue("width");
-                                if (Y) {
-                                    m.style.width = Y;
+            if (U && domDistance(U, this.articleNode(), 10) > g && parseInt(getComputedStyle(U).fontSize) < f * Re && (U = null), U) {
+                this._articleTitleElement = U;
+                var Me = U.headerText.trim();
+                T && e(T, Me) ? this._articleTitle = T : y && e(y, Me) ? this._articleTitle = y : this._articleTitle = Me
+            }
+            return this._articleTitle || (T && e(T, y) ? this._articleTitle = T : this._articleTitle = y), this._articleTitle
+        }
+    },
+    contentFromUniqueMetadataSelector: function(e, t) {
+        var i = e.querySelectorAll(t);
+        if (1 !== i.length)
+            return null;
+        var n = i[0];
+        return n && 2 === n.attributes.length ? n.content : null
+    },
+    articleSubhead: function() {
+        function e(e) {
+            return elementIsAHeader(e) ? parseInt(/H(\d)?/.exec(e.tagName)[1]) : NaN
+        }
+        const t = /author|kicker/i,
+            i = /sub(head|title)|description|deck/i;
+        if (this._articleSubhead)
+            return this._articleSubhead;
+        var n = this.articleNode();
+        if (n) {
+            var r = this._articleTitleElement;
+            if (r) {
+                var a,
+                    l = e(r),
+                    o = cachedElementBoundingRect(r),
+                    s = this.contentDocument.querySelector("meta[property='og:description']");
+                if (s)
+                    a = s.content;
+                else {
+                    var c = this.contentDocument.querySelector("meta[name=description]");
+                    c && (a = c.content)
+                }
+                for (var m = [nextNonFloatingVisibleElementSibling(r), nextLeafElementForElement(r)], h = m.length, d = 0; h > d; ++d) {
+                    var u = m[d];
+                    if (u && u !== n) {
+                        var g = u.className;
+                        if (!t.test(g)) {
+                            var f = !1;
+                            if (elementIsAHeader(u))
+                                if (isNaN(l))
+                                    f = !0;
+                                else {
+                                    var p = e(u);
+                                    p - 1 === l && (f = !0)
+                                }
+                            if (!f && i.test(g) && (f = !0), !f && /\bdescription\b/.test(u.getAttribute("itemprop")) && (f = !0), !f && a && a === u.innerText && (f = !0), f || "summary" !== u.getAttribute("itemprop") || (f = !0), f) {
+                                var v;
+                                if ("META" === u.tagName) {
+                                    var E = u.getAttribute("content");
+                                    v = E ? E.trim() : "";
+                                    var N = u.nextElementSibling;
+                                    if (!N || titleFromHeaderElement(N) !== v)
+                                        continue;
+                                    u = N
+                                } else {
+                                    if (cachedElementBoundingRect(u).top < (o.bottom + o.top) / 2)
+                                        continue;
+                                    v = titleFromHeaderElement(u).trim()
+                                }
+                                if (v.length) {
+                                    this._articleSubheadElement = u, this._articleSubhead = v;
                                     break
                                 }
                             }
                         }
                     }
-                    l === 1&&!Y && (m.style.width = cachedElementBoundingRect(d).width + "px");
-                    var tt = m.parentNode === n ? 36: 12, nt = m.style.width;
-                    nt && parseInt(nt) >= screen.width - tt && m.setAttribute("class", "large-element")
                 }
-                if (D === "TABLE")
-                    c || (c = 1);
-                else if (D === "VIDEO") {
-                    var rt = cachedElementBoundingRect(d);
-                    const it = 36;
-                    rt.width > screen.width - it && m.setAttribute("class", "large-element")
-                } else if (D === "IMG") {
-                    var st=!1, ot = X.length;
-                    for (var V = 0; V < ot; ++V) {
-                        var $ = X[V].nodeName;
-                        if (KnownImageLazyLoadingAttributes[$.toLowerCase()]) {
-                            m.setAttribute("src", m.getAttribute($)), st=!0;
-                            break
-                        }
-                    }
-                    m.removeAttribute("border"), m.removeAttribute("hspace"), m.removeAttribute("vspace");
-                    var ut = m.getAttribute("align");
-                    m.removeAttribute("align");
-                    if (ut === "left" || ut === "right")
-                        m.classList.add("float"), m.classList.add(ut);
-                    if (!l&&!st) {
-                        var at = cachedElementBoundingRect(d), ft = at.width, lt = at.height;
-                        ft === 1 && lt === 1 ? _ = m : O && lt < MinimumHeightForImagesAboveTheArticleTitle && at.bottom < O.top ? _ = m : ft < ImageSizeTiny && lt < ImageSizeTiny && m.setAttribute("class", "reader-image-tiny")
-                    }
-                } else if (D === "FONT")
-                    m.removeAttribute("size"), m.removeAttribute("face"), m.removeAttribute("color");
-                else if (D === "A" && m.parentNode) {
-                    var ct = m.getAttribute("href");
-                    if (ct && ct.length && (ct[0] === "#" || ct.substring(0, 11) === "javascript:")) {
-                        if (!c&&!m.childElementCount && m.parentElement.childElementCount === 1 && m.parentElement.tagName !== "LI") {
-                            var ht = this.contentDocument.evaluate("text()", m.parentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-                            ht.snapshotLength || (_ = m)
-                        }
-                        if (!_) {
-                            var R = this.contentDocument.createElement("span");
-                            if (m.childElementCount === 1 && m.firstElementChild.tagName === "IMG") {
-                                var pt = m.firstElementChild;
-                                pt.width > AnchorImageMinimumWidth && pt.height > AnchorImageMinimumHeight && R.setAttribute("class", "converted-image-anchor")
-                            }
-                            R.className || R.setAttribute("class", "converted-anchor");
-                            while (m.firstChild)
-                                R.appendChild(m.firstChild);
-                            m.parentNode.replaceChild(R, m), m = R, w === m && (w = R)
-                        }
-                    }
-                }
-            }
-            !_ && elementIsCommentBlock(d) && (_ = m);
-            if (!_ && D === "A" && L.has(d.href)) {
-                var dt = d, vt = m, mt, gt;
-                while ((dt = dt.parentElement) && (vt = vt.parentElement)) {
-                    const yt = 10;
-                    if (cachedElementBoundingRect(dt).top - cachedElementBoundingRect(d).top > yt)
-                        break;
-                    if (dt === t)
-                        break;
-                    N(dt) && (mt = dt, gt = vt)
-                }
-                mt && (_ = gt, d = mt, m = gt, m.originalElement = d, D = m.tagName), dt = null, vt = null, mt = null, gt = null
-            }
-            var bt = _ ? null: d.firstElementChild;
-            if (bt)
-                d = bt, m = m.firstElementChild, S(1);
-            else {
-                var wt;
-                while (d !== t&&!(wt = d.nextElementSibling))
-                    d = d.parentElement, m = m.parentElement, S( - 1);
-                if (d === t) {
-                    if (_)
-                        if (_.parentElement)
-                            _.remove();
-                        else if (r)
-                            return null;
-                    break
-                }
-                d = wt, m = m.nextElementSibling, x()
-            }
-            if (_)
-                if (_.parentElement)
-                    _.remove();
-                else if (r)
-                    return null
-        }
-        var Et = n.querySelectorAll("iframe"), St = Et.length;
-        for (var V = 0; V < St; ++V) {
-            var xt = Et[V];
-            if (elementLooksLikeEmbeddedTweet(xt.originalElement)) {
-                var Tt = this.adoptableSimpleTweetFromTwitterIframe(xt);
-                Tt && xt.parentElement.replaceChild(Tt, xt)
+                return this._articleSubhead
             }
         }
-        for (var V = a.length - 1; V >= 0; --V) {
-            var Nt = a[V];
-            Nt.parentNode && this.shouldPruneElement(Nt, Nt.originalElement) && (w === Nt && ((w = Nt.nextElementSibling) || (w = Nt.parentElement)), Nt.remove())
-        }
-        var Ct = n.querySelectorAll(".float");
-        for (var V = 0; V < Ct.length; ++V) {
-            var kt=!1, Lt = Ct[V];
-            if (!kt) {
-                var At = Lt.querySelectorAll("a, span.converted-image-anchor"), Ot = Lt.querySelectorAll("span.converted-anchor");
-                kt = Lt.parentNode && Ot.length > At.length
-            }
-            if (!kt) {
-                var Mt = Lt.querySelectorAll("embed, object").length, _t = Lt.originalElement.querySelectorAll("embed, object").length;
-                !Mt && _t && (kt=!0)
-            }
-            if (!kt) {
-                var Dt = Lt.originalElement.getElementsByTagName("img"), Pt = Dt.length, Ht = 0;
-                for (var Bt = 0; Bt < Pt; ++Bt) {
-                    E && isElementVisible(Dt[Bt]) && Ht++;
-                    if (Ht > 1)
-                        break
-                }
-                if (Ht === 1) {
-                    var jt = Lt.getElementsByTagName("img").length;
-                    jt || (kt=!0)
-                }
-            }
-            kt && (w === Lt && ((w = Lt.nextElementSibling) || (w = Lt.parentElement)), Lt.remove())
-        }
-        if (r&&!removeWhitespace(n.innerText).length)
-            return null;
-        if (w) {
-            var Ft = document.createElement("div"), It = w.originalElement.getBoundingClientRect(), qt = It.height > 0 ? It.top * 100 / It.height: 0;
-            Ft.style.position = "relative", Ft.style.top = Math.round( - qt) + "%", Ft.setAttribute("id", "safari-reader-element-marker"), w.insertBefore(Ft, w.firstChild)
-        }
-        return n
     },
-    adoptableSimpleTweetFromTwitterIframe: function(t) {
-        var n = t.originalElement.contentDocument.documentElement, r = n.querySelector("[data-tweet-id].expanded");
-        if (!r)
+    adoptableMetadataBlock: function() {
+        this.updateArticleBylineAndDateElementsIfNecessary();
+        var e = this.articleBylineElement(),
+            t = this.articleDateElement();
+        if (!e && !t)
             return null;
-        var i = this.contentDocument.createElement("div");
-        i.classList.add("tweet-wrapper");
-        var s = this.contentDocument.createElement("blockquote");
-        s.classList.add("simple-tweet"), i.appendChild(s);
-        var o = r.getAttribute("data-tweet-id");
-        i.setAttribute("data-reader-tweet-id", o);
-        var u = r.querySelector(".dateline"), a = r.querySelector('[data-scribe="element:screen_name"]'), f = r.querySelector('[data-scribe="element:name"]'), l = r.querySelector(".e-entry-title");
-        if (!u ||!a ||!f ||!l)
-            return i;
-        var c = "&mdash; " + f.innerText + " (" + a.innerText + ")", h = this.contentDocument.createElement("p");
-        h.innerHTML = l.innerHTML, s.appendChild(h), s.insertAdjacentHTML("beforeend", c);
-        var p = this.contentDocument.createElement("span");
-        p.innerHTML = u.innerHTML, s.appendChild(p);
-        var d = s.querySelectorAll("img.twitter-emoji"), v = d.length;
-        for (var m = 0; m < v; ++m) {
-            var g = d[m], y = g.getAttribute("alt");
-            if (y && y.length > 0) {
-                var b = this.contentDocument.createElement("span");
-                b.innerText = y, g.parentNode.replaceChild(b, g)
-            }
+        if (e && t) {
+            var i = e.compareDocumentPosition(t);
+            i & Node.DOCUMENT_POSITION_CONTAINS && (e = null), i & Node.DOCUMENT_POSITION_CONTAINED_BY && (t = null), e === t && (t = null)
         }
-        return i
+        var n,
+            r = this.contentDocument.createElement("div"),
+            a = !1,
+            l = !1;
+        if (e) {
+            var n = this.cleanArticleNode(e, e.cloneNode(!0), CleaningType.MetadataContent, !1);
+            n.innerText.trim() && (a = !0, n.classList.add("byline"))
+        }
+        if (t) {
+            var o = this.cleanArticleNode(t, t.cloneNode(!0), CleaningType.MetadataContent, !1);
+            o.innerText.trim() && (l = !0, o.classList.add("date"))
+        }
+        if (a && r.appendChild(n), a && l) {
+            var s = document.createElement("span");
+            s.classList.add("delimeter"), r.appendChild(s)
+        }
+        return l && r.appendChild(o), r
     },
-    leadingImageNode: function() {
-        const t = 250, n = .5, r = 3;
-        if (!this.article ||!this.article.element)
-            return null;
-        var i = this.article.element;
-        for (var s = 0; s < r; ++s) {
-            if (!i.parentNode)
-                break;
-            i = i.parentNode;
-            var o = i.getElementsByTagName("img")[0];
-            if (o) {
-                var u = cachedElementBoundingRect(o);
-                if (u.height >= t && u.width >= this._articleWidth * n) {
-                    var a = this.article.element.compareDocumentPosition(o);
-                    if (!(a & DocumentPositionPreceding) || a & DocumentPositionContainedBy)
-                        continue;
-                    a = this.extraArticle ? this.extraArticle.element.compareDocumentPosition(o) : null;
-                    if (a && (!(a & DocumentPositionPreceding) || a & DocumentPositionContainedBy))
-                        continue;
-                    return o
+    articleBylineElement: function() {
+        return this._articleBylineElement
+    },
+    findArticleBylineElement: function() {
+        const e = ".byline, .article-byline, .entry-meta, [itemprop='author'], a[rel='author']";
+        var t = this.article.element,
+            i = t.querySelectorAll(e);
+        if (1 === i.length)
+            return i[0];
+        var n = this._articleSubheadElement || this._articleTitleElement,
+            r = n ? n.nextElementSibling : null;
+        if (r) {
+            var a = this.contentFromUniqueMetadataSelector(this.contentDocument, "head meta[name=author]");
+            if (r.matches(e) || r.innerText === a || (r = r.querySelector(e)), r) {
+                var l = r.querySelector("li");
+                if (l) {
+                    var o = r.querySelector(e);
+                    o && (r = o)
                 }
             }
+            return r
+        }
+        var s = t.closest("article");
+        if (s) {
+            var r = s.querySelector(e);
+            if (r)
+                return r
         }
         return null
     },
-    mainImageNode: function() {
-        var t = this.leadingImageNode();
-        if (t)
-            return t;
-        if (this.article && this.article.element) {
-            var n = this.article.element.querySelectorAll("img"), r = n.length;
-            for (var i = 0; i < r; ++i) {
-                var s = n[i], o = s._cachedElementBoundingRect;
-                o || (o = s.getBoundingClientRect());
-                if (o.width >= MainImageMinimumWidthAndHeight && o.height >= MainImageMinimumWidthAndHeight)
-                    return s
-            }
-        }
-        return null
+    articleDateElement: function() {
+        return this._articleDateElement
     },
-    articleTitle: function() {
-        function m(e, t) {
-            var n = e ? t.indexOf(e): - 1;
-            return n!==-1 && (n === 0 || n + e.length === t.length)
+    findArticleDateElement: function() {
+        const e = "time, .dateline, .entry-date";
+        var t,
+            i = this.article.element,
+            n = i.querySelectorAll(e);
+        if (1 === n.length && (t = n[0]), i = i.closest("article")) {
+            var n = i.querySelectorAll(e);
+            if (1 === n.length)
+                return n[0]
         }
-        function g(e, t) {
-            return e.host === t.host && e.pathname === t.pathname
+        if (!t) {
+            var r = this._articleSubheadElement || this._articleTitleElement,
+                a = r ? r.nextElementSibling : null;
+            a && (n = a.querySelectorAll(e), 1 === n.length && (a = n[0])), !a || a.matches(e) || a.querySelector(e) || (a = null), a && a.contains(i) && (a = null), t = a
         }
-        if (!this.articleNode())
-            return;
-        if (this._articleTitle)
-            return this._articleTitle;
-        const t = 500, n = 20, r = 8, i = 1.1, s = 1.25, o = /header|title|headline|instapaper_title/i, u = 1.5, a = 1.8, f = 1.5, l = .6, c = 3, h = 1.5, p = 9, d = 1.5, v = /byline|author/i;
-        var y = function(e) {
-            var t = this.contentDocument.querySelector(e), n = t && t.attributes.length === 2 ? t.content: null;
-            if (n) {
-                var r = this.articleTitleAndSiteNameFromTitleString(n);
-                r && (n = r.articleTitle)
-            }
-            return n
-        }.bind(this), b = this.contentDocument.title, w = y("head meta[property='og:title']"), E = y("head meta[name='twitter:title']"), S = cachedElementBoundingRect(this.articleNode());
-        this.extraArticleNode() && this.extraArticle.isPrepended && (S = cachedElementBoundingRect(this.extraArticleNode()));
-        var x = S.left + S.width / 2, T = S.top, N = T;
-        this._articleWidth = S.width, this.leadingImage = this.leadingImageNode();
-        if (this.leadingImage) {
-            var C = cachedElementBoundingRect(this.leadingImage);
-            N = (C.top + T) / 2
-        }
-        var k = "h1, h2, h3, h4, h5, .headline, .article_title, #hn-headline, .inside-head, .instapaper_title", L = this.article.element.tagName;
-        if (L === "DL" || L === "DD")
-            k += ", dt";
-        var A = this.contentDocument.querySelectorAll(k);
-        A = Array.prototype.slice.call(A, 0);
-        var O = this.contentDocument.location, M = this.article.element.getElementsByTagName("a");
-        for (var _ = 0; _ < M.length; _++) {
-            var D = M[_];
-            if (D.offsetTop > this.articleNode().offsetTop + n)
-                break;
-            if (g(D, O)) {
-                A.push(D);
-                break
-            }
-        }
-        var P, H = A.map(innerTextOrTextContent), B = A.length, j = 0, F = [], I = [], q = [];
-        for (var _ = 0; _ < B; ++_) {
-            var R = A[_], U = H[_], z = stringSimilarity(b, U);
-            if (w) {
-                var W = stringSimilarity(w, U);
-                z += W, W > StringSimilarityToDeclareStringsNearlyIdentical && I.push(R)
-            }
-            if (E) {
-                var X = stringSimilarity(E, U);
-                z += X, X > StringSimilarityToDeclareStringsNearlyIdentical && q.push(R)
-            }
-            z === j ? F.push(R) : z > j && (j = z, F = [R])
-        }
-        I.length === 1 ? (P = I[0], P.headerText = innerTextOrTextContent(P)) : q.length === 1 && (P = q[0], P.headerText = innerTextOrTextContent(P));
-        if (!P)
-            for (var _ = 0; _ < B; ++_) {
-                var R = A[_];
-                if (!isElementVisible(R))
-                    continue;
-                    var V = cachedElementBoundingRect(R), $ = V.left + V.width / 2, J = V.top + V.height / 2, K = $ - x, Q = J - N, G = I.indexOf(R)!==-1, Y = q.indexOf(R)!==-1, Z = R.classList.contains("instapaper_title"), et = R.getAttribute("itemprop") === "headline", tt = G || Y || Z || et, nt = Math.sqrt(K * K + Q * Q), rt = tt ? t: Math.max(t - nt, 0), U = H[_], it = R.getAttribute("property");
-                    if (it) {
-                        var st = /dc.title/i.exec(it);
-                        if (st && st[0]) {
-                            var ot = this.contentDocument.querySelectorAll('*[property~="' + st[0] + '"]');
-                            if (ot.length === 1) {
-                                P = R, P.headerText = U;
-                                break
-                            }
-                        }
-                    }
-                    if (v.test(R.className))
-                        continue;
-                        if (!tt) {
-                            if (nt > t)
-                                continue;
-                                if ($ < S.left || $ > S.right)
-                                    continue
-                        }
-                        if (b && stringsAreNearlyIdentical(U, b))
-                            rt*=c;
-                        else if (m(U, b))
-                            rt*=h;
-                        else if (U.length < r)
-                            continue;
-                            var ut=!1, at = nearestAncestorElementWithTagName(R, "A");
-                            at || (at = R.querySelector("a"));
-                            if (at) {
-                                var ft = at.host === O.host, lt = at.pathname === O.pathname;
-                                if (ft && lt)
-                                    rt*=f;
-                                else {
-                                    if (ft && nearestAncestorElementWithTagName(R, "LI"))
-                                        continue;
-                                        rt*=l, ut=!0
-                                }
-                            }
-                            var ct = fontSizeFromComputedStyle(getComputedStyle(R));
-                            ut || (rt*=ct / BaseFontSize), rt*=1 + TitleCandidateDepthScoreMultiplier * elementDepth(R);
-                            var ht = parseInt(this.contentTextStyle().fontSize);
-                            parseInt(ct) > ht * i && (rt*=s);
-                            if (o.test(R.className) || o.test(R.getAttribute("id")))
-                                rt*=u;
-                                var pt = R.parentElement;
-                                pt && (o.test(pt.className) || o.test(pt.getAttribute("id"))) && (rt*=u), F.indexOf(R)!==-1 && (rt*=a);
-                                if (!P || rt > P.headerScore)
-                                    P = R, P.headerScore = rt, P.headerText = U
-            }
-        P && domDistance(P, this.articleNode(), p + 1) > p && parseInt(getComputedStyle(P).fontSize) < d * ht && (P = null);
-        if (P) {
-            this._articleTitleElement = P;
-            var dt = P.headerText.trim();
-            w && m(w, dt) ? this._articleTitle = w : b && m(b, dt) ? this._articleTitle = b : this._articleTitle = dt
-        }
-        return this._articleTitle || (w && m(w, b) ? this._articleTitle = w : this._articleTitle = b), this._articleTitle
+        return t
+    },
+    articleDateElementWithBylineElementHint: function(e) {
+        var t = e.nextElementSibling;
+        return t && /date/.test(t.className) ? t : null
+    },
+    updateArticleBylineAndDateElementsIfNecessary: function() {
+        this._didArticleBylineAndDateElementDetection || (this.updateArticleBylineAndDateElements(), this._didArticleBylineAndDateElementDetection = !0)
+    },
+    updateArticleBylineAndDateElements: function() {
+        var e = this.findArticleBylineElement(),
+            t = this.findArticleDateElement();
+        !t && e && (t = this.articleDateElementWithBylineElementHint(e)), this._articleDateElement = t, this._articleBylineElement = e
     },
     articleIsLTR: function() {
         if (!this._articleIsLTR) {
-            var t = getComputedStyle(this.article.element);
-            this._articleIsLTR = t ? t.direction === "ltr" : !0
+            var e = getComputedStyle(this.article.element);
+            this._articleIsLTR = e ? "ltr" === e.direction : !0
         }
         return this._articleIsLTR
     },
     findSuggestedCandidate: function() {
-        var t = this.suggestedRouteToArticle;
-        if (!t ||!t.length)
+        var e = this.suggestedRouteToArticle;
+        if (!e || !e.length)
             return null;
-        var n, r;
-        for (r = t.length - 1; r >= 0; --r)
-            if (t[r].id) {
-                n = this.contentDocument.getElementById(t[r].id);
-                if (n)
-                    break
-            }
-        r++, n || (n = this.contentDocument);
-        while (r < t.length) {
-            var i = t[r], s = n.nodeType === Node.DOCUMENT_NODE ? n.documentElement: n.firstElementChild;
-            for (var o = 1; s && o < i.index; s = s.nextElementSibling)
-                this.shouldIgnoreInRouteComputation(s) || o++;
-            if (!s)
+        var t,
+            i;
+        for (i = e.length - 1; i >= 0 && (!e[i].id || !(t = this.contentDocument.getElementById(e[i].id))); --i)
+            ;
+        for (i++, t || (t = this.contentDocument); i < e.length;) {
+            for (var n = e[i], r = t.nodeType === Node.DOCUMENT_NODE ? t.documentElement : t.firstElementChild, a = 1; r && a < n.index; r = r.nextElementSibling)
+                this.shouldIgnoreInRouteComputation(r) || a++;
+            if (!r)
                 return null;
-            if (s.tagName !== i.tagName)
+            if (r.tagName !== n.tagName)
                 return null;
-            if (i.className && s.className !== i.className)
+            if (n.className && r.className !== n.className)
                 return null;
-            n = s, r++
+            t = r, i++
         }
-        return isElementVisible(n) ? new CandidateElement(n, this.contentDocument) : null
+        return isElementVisible(t) ? new CandidateElement(t, this.contentDocument) : null
     },
-    canRunReaderDetection: function() {
-        var e = this.contentDocument.location.hostname, t = this.contentDocument.location.pathname;
-        for (var n in BlacklistedHostsAllowedPathRegexMap) {
-            var r = new RegExp(n.escapeForRegExp());
-            if (!r.test(e))
-                continue;
-            var i = BlacklistedHostsAllowedPathRegexMap[n];
-            return i instanceof RegExp ? i.test(t) : !1
-        }
-        return !0
-    },
-    findArticleBySearchingAllElements: function(t) {
-        var n = this.findSuggestedCandidate(), r = this.findCandidateElements();
-        if (!r ||!r.length)
-            return n;
-        if (n && n.basicScore() >= ReaderMinimumScore)
-            return n;
-        var i = this.highestScoringCandidateFromCandidates(r);
-        for (var s = i.element; s !== this.contentDocument; s = s.parentNode)
-            if (s.tagName === "BLOCKQUOTE") {
-                var o = s.parentNode, u = r.length;
-                for (var a = 0; a < u; ++a) {
-                    var f = r[a];
-                    if (f.element === o) {
-                        i = f;
+    findArticleBySearchingAllElements: function(e) {
+        var t = this.findSuggestedCandidate(),
+            i = this.findCandidateElements();
+        if (!i || !i.length)
+            return t;
+        if (t && t.basicScore() >= ReaderMinimumScore)
+            return t;
+        for (var n = this.highestScoringCandidateFromCandidates(i), r = n.element; r !== this.contentDocument; r = r.parentNode)
+            if ("BLOCKQUOTE" === r.tagName) {
+                for (var a = r.parentNode, l = i.length, o = 0; l > o; ++o) {
+                    var s = i[o];
+                    if (s.element === a) {
+                        n = s;
                         break
                     }
                 }
                 break
             }
-        if (n && i.finalScore() < ReaderMinimumScore)
-            return n;
-        if (!t) {
-            if (i.shouldDisqualifyDueToScoreDensity())
+        if (t && n.finalScore() < ReaderMinimumScore)
+            return t;
+        if (!e) {
+            if (n.shouldDisqualifyDueToScoreDensity())
                 return null;
-            if (i.shouldDisqualifyDueToHorizontalRuleDensity())
+            if (n.shouldDisqualifyDueToHorizontalRuleDensity())
                 return null;
-            if (i.shouldDisqualifyDueToHeaderDensity())
+            if (n.shouldDisqualifyDueToHeaderDensity())
                 return null;
-            if (i.shouldDisqualifyDueToSimilarElements(r))
+            if (n.shouldDisqualifyDueToSimilarElements(i))
                 return null
         }
-        return i
+        return n
     },
     findExtraArticle: function() {
         if (!this.article)
             return null;
-        for (var t = 0, n = this.article.element; t < 3 && n; ++t, n = n.parentNode) {
-            var r = this.findExtraArticleCandidateElements(n);
-            if (!r ||!r.length)
-                continue;
-            var i = this.sortCandidateElementsInDescendingScoreOrder(r), s;
-            for (var o = 0; o < i.length; o++) {
-                s = i[o];
-                if (!s ||!s.basicScore())
-                    break;
-                if (s.shouldDisqualifyDueToScoreDensity())
-                    continue;
-                if (s.shouldDisqualifyDueToHorizontalRuleDensity())
-                    continue;
-                if (s.shouldDisqualifyDueToHeaderDensity())
-                    continue;
-                if (cachedElementBoundingRect(s.element).height < PrependedArticleCandidateMinimumHeight && cachedElementBoundingRect(this.article.element).width !== cachedElementBoundingRect(s.element).width)
-                    continue;
-                var u = contentTextStyleForNode(this.contentDocument, s.element);
-                if (!u)
-                    continue;
-                if (u.fontFamily !== this.contentTextStyle().fontFamily || u.fontSize !== this.contentTextStyle().fontSize)
-                    continue;
-                if (s)
-                    return s
-            }
+        for (var e = 0, t = this.article.element; 3 > e && t; ++e, t = t.parentNode) {
+            var i = this.findExtraArticleCandidateElements(t);
+            if (i && i.length)
+                for (var n, r = this.sortCandidateElementsInDescendingScoreOrder(i), a = 0; a < r.length && (n = r[a], n && n.basicScore()); a++)
+                    if (!n.shouldDisqualifyDueToScoreDensity() && !n.shouldDisqualifyDueToHorizontalRuleDensity() && !(n.shouldDisqualifyDueToHeaderDensity() || cachedElementBoundingRect(n.element).height < PrependedArticleCandidateMinimumHeight && cachedElementBoundingRect(this.article.element).width !== cachedElementBoundingRect(n.element).width)) {
+                        var l = contentTextStyleForNode(this.contentDocument, n.element);
+                        if (l && l.fontFamily === this.contentTextStyle().fontFamily && l.fontSize === this.contentTextStyle().fontSize && n)
+                            return n
+                    }
         }
         return null
     },
-    highestScoringCandidateFromCandidates: function(t) {
-        var n = 0, r = null, i = t.length;
-        for (var s = 0; s < i; ++s) {
-            var o = t[s], u = o.basicScore();
-            u >= n && (n = u, r = o)
+    highestScoringCandidateFromCandidates: function(e) {
+        for (var t = 0, i = null, n = e.length, r = 0; n > r; ++r) {
+            var a = e[r],
+                l = a.basicScore();
+            l >= t && (t = l, i = a)
+        }
+        return i
+    },
+    sortCandidateElementsInDescendingScoreOrder: function(e) {
+        function t(e, t) {
+            return e.basicScore() !== t.basicScore() ? t.basicScore() - e.basicScore() : t.depth() - e.depth()
+        }
+        return e.sort(t)
+    },
+    findCandidateElements: function() {
+        const e = 1e3;
+        for (var t = Date.now() + e, i = this.contentDocument.getElementsByTagName("*"), n = i.length, r = [], a = 0; n > a; ++a) {
+            var l = i[a];
+            if (!CandidateTagNamesToIgnore[l.tagName]) {
+                var o = CandidateElement.candidateIfElementIsViable(l, this.contentDocument);
+                if (o && r.push(o), Date.now() > t) {
+                    r = [];
+                    break
+                }
+            }
+        }
+        for (var s = r.length, a = 0; s > a; ++a)
+            r[a].element.candidateElement = r[a];
+        for (var a = 0; s > a; ++a) {
+            var c = r[a];
+            if ("BLOCKQUOTE" === c.element.tagName) {
+                var m = c.element.parentElement.candidateElement;
+                m && m.addTextNodesFromCandidateElement(c)
+            }
+        }
+        for (var a = 0; s > a; ++a)
+            r[a].element.candidateElement = null;
+        return r
+    },
+    findExtraArticleCandidateElements: function(e) {
+        if (!this.article)
+            return [];
+        e || (e = this.article.element);
+        for (var t = "preceding-sibling::*/descendant-or-self::*", i = this.contentDocument.evaluate(t, e, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), n = i.snapshotLength, r = [], a = 0; n > a; ++a) {
+            var l = i.snapshotItem(a);
+            if (!CandidateTagNamesToIgnore[l.tagName]) {
+                var o = CandidateElement.extraArticleCandidateIfElementIsViable(l, this.article, this.contentDocument, !0);
+                o && r.push(o)
+            }
+        }
+        t = "following-sibling::*/descendant-or-self::*", i = this.contentDocument.evaluate(t, e, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), n = i.snapshotLength;
+        for (var a = 0; n > a; ++a) {
+            var l = i.snapshotItem(a);
+            if (!CandidateTagNamesToIgnore[l.tagName]) {
+                var o = CandidateElement.extraArticleCandidateIfElementIsViable(l, this.article, this.contentDocument, !1);
+                o && r.push(o)
+            }
         }
         return r
     },
-    sortCandidateElementsInDescendingScoreOrder: function(t) {
-        function n(e, t) {
-            return e.basicScore() !== t.basicScore() ? t.basicScore() - e.basicScore() : t.depth() - e.depth()
-        }
-        return t.sort(n)
-    },
-    findCandidateElements: function() {
-        const t = 1e3;
-        var n = Date.now() + t, r = this.contentDocument.getElementsByTagName("*"), i = r.length, s = [];
-        for (var o = 0; o < i; ++o) {
-            var u = r[o];
-            if (CandidateTagNamesToIgnore[u.tagName])
-                continue;
-            var a = CandidateElement.candidateIfElementIsViable(u, this.contentDocument);
-            a && s.push(a);
-            if (Date.now() > n) {
-                s = [];
-                break
-            }
-        }
-        var f = s.length;
-        for (var o = 0; o < f; ++o)
-            s[o].element.candidateElement = s[o];
-        for (var o = 0; o < f; ++o) {
-            var l = s[o];
-            if (l.element.tagName !== "BLOCKQUOTE")
-                continue;
-            var c = l.element.parentElement.candidateElement;
-            if (!c)
-                continue;
-            c.addTextNodesFromCandidateElement(l)
-        }
-        for (var o = 0; o < f; ++o)
-            s[o].element.candidateElement = null;
-        return s
-    },
-    findExtraArticleCandidateElements: function(t) {
-        if (!this.article)
-            return [];
-        t || (t = this.article.element);
-        var n = "preceding-sibling::*/descendant-or-self::*", r = this.contentDocument.evaluate(n, t, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), i = r.snapshotLength, s = [];
-        for (var o = 0; o < i; ++o) {
-            var u = r.snapshotItem(o);
-            if (CandidateTagNamesToIgnore[u.tagName])
-                continue;
-            var a = CandidateElement.extraArticleCandidateIfElementIsViable(u, this.article, this.contentDocument, !0);
-            a && s.push(a)
-        }
-        n = "following-sibling::*/descendant-or-self::*", r = this.contentDocument.evaluate(n, t, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), i = r.snapshotLength;
-        for (var o = 0; o < i; ++o) {
-            var u = r.snapshotItem(o);
-            if (CandidateTagNamesToIgnore[u.tagName])
-                continue;
-            var a = CandidateElement.extraArticleCandidateIfElementIsViable(u, this.article, this.contentDocument, !1);
-            a && s.push(a)
-        }
-        return s
-    },
-    isGeneratedBy: function(t) {
-        var n = this.contentDocument.head ? this.contentDocument.head.querySelector("meta[name=generator]"): null;
-        if (!n)
+    isGeneratedBy: function(e) {
+        var t = this.contentDocument.head ? this.contentDocument.head.querySelector("meta[name=generator]") : null;
+        if (!t)
             return !1;
-        var r = n.content;
-        return r ? t.test(r) : !1
+        var i = t.content;
+        return i ? e.test(i) : !1
     },
     isMediaWikiPage: function() {
         return this.isGeneratedBy(/^MediaWiki /)
@@ -1729,240 +2412,222 @@ CandidateElement = function(e, t) {
             return null;
         if (this.isMediaWikiPage())
             return null;
-        var t, n = 0, r = this.article.element;
-        r.parentNode && getComputedStyle(r).display === "inline" && (r = r.parentNode);
-        var i = r, s = cachedElementBoundingRect(r).bottom + LinkMaxVerticalDistanceFromArticle;
-        while (isElementNode(i) && cachedElementBoundingRect(i).bottom <= s)
-            i = i.parentNode;
-        i !== r && (i === this.contentDocument || isElementNode(i)) && (r = i);
-        var o = this.contentDocument.evaluate(LinkCandidateXPathQuery, r, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null), u = o.snapshotLength;
-        if (this.pageNumber <= 2&&!this.prefixWithDateForNextPageURL) {
-            var a = this.contentDocument.location.pathname, f = a.match(LinkDateRegex);
-            f && (f = f[0], this.prefixWithDateForNextPageURL = a.substring(0, a.indexOf(f) + f.length))
+        var e,
+            t = 0,
+            i = this.article.element;
+        i.parentNode && "inline" === getComputedStyle(i).display && (i = i.parentNode);
+        for (var n = i, r = cachedElementBoundingRect(i).bottom + LinkMaxVerticalDistanceFromArticle; isElementNode(n) && cachedElementBoundingRect(n).bottom <= r;)
+            n = n.parentNode;
+        n === i || n !== this.contentDocument && !isElementNode(n) || (i = n);
+        var a = this.contentDocument.evaluate(LinkCandidateXPathQuery, i, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null),
+            l = a.snapshotLength;
+        if (this.pageNumber <= 2 && !this.prefixWithDateForNextPageURL) {
+            var o = this.contentDocument.location.pathname,
+                s = o.match(LinkDateRegex);
+            s && (s = s[0], this.prefixWithDateForNextPageURL = o.substring(0, o.indexOf(s) + s.length))
         }
-        for (var l = 0; l < u; ++l) {
-            var c = o.snapshotItem(l), h = this.scoreNextPageLinkCandidate(c);
-            h > n && (t = c, n = h)
+        for (var c = 0; l > c; ++c) {
+            var m = a.snapshotItem(c),
+                h = this.scoreNextPageLinkCandidate(m);
+            h > t && (e = m, t = h)
         }
-        return t ? t.href : null
+        return e ? e.href : null
     },
-    scoreNextPageLinkCandidate: function(t) {
-        function n(e, t, n, r) {
+    scoreNextPageLinkCandidate: function(e) {
+        function t(e, t, i, n) {
             t.substring(0, e.length) === e && (t = t.substring(e.length), e = "");
-            var i = t.lastInteger();
-            if (isNaN(i))
+            var r = t.lastInteger();
+            if (isNaN(r))
                 return !1;
-            var s = e ? e.lastInteger(): NaN;
-            if (isNaN(s) || s >= MaximumExactIntegralValue)
-                s = r;
-            return i === s ? n.lastInteger() === s + 1 : i === s + 1
+            var a = e ? e.lastInteger() : NaN;
+            return (isNaN(a) || a >= MaximumExactIntegralValue) && (a = n), r === a ? i.lastInteger() === a + 1 : r === a + 1
         }
-        function r(e) {
-            var t = {}, n = e.substring(1).split("&"), r = n.length;
-            for (var i = 0; i < r; ++i) {
-                var s = n[i], o = s.indexOf("=");
-                o===-1 ? t[s] = null : t[s.substring(0, o)] = s.substring(o + 1)
+        function i(e) {
+            for (var t = {}, i = e.substring(1).split("&"), n = i.length, r = 0; n > r; ++r) {
+                var a = i[r],
+                    l = a.indexOf("=");
+                -1 === l ? t[a] = null : t[a.substring(0, l)] = a.substring(l + 1)
             }
             return t
         }
-        var i = this.contentDocument.location;
-        if (t.host !== i.host)
+        var n = this.contentDocument.location;
+        if (e.host !== n.host)
             return 0;
-        if (t.pathname === i.pathname && t.search === i.search)
+        if (e.pathname === n.pathname && e.search === n.search)
             return 0;
-        if (t.toString().indexOf("#")!==-1)
+        if (-1 !== e.toString().indexOf("#"))
             return 0;
-        if (anchorLinksToAttachment(t) || anchorLinksToTagOrCategoryPage(t))
+        if (anchorLinksToAttachment(e) || anchorLinksToTagOrCategoryPage(e))
             return 0;
-        if (!isElementVisible(t))
+        if (!isElementVisible(e))
             return 0;
-        var s = cachedElementBoundingRect(t), o = this._articleBoundingRect, u = Math.max(0, Math.max(o.top - (s.top + s.height), s.top - (o.top + o.height)));
-        if (s.top < o.top)
+        var r = cachedElementBoundingRect(e),
+            a = this.articleBoundingRect(),
+            l = Math.max(0, Math.max(a.top - (r.top + r.height), r.top - (a.top + a.height)));
+        if (r.top < a.top)
             return 0;
-        if (u > LinkMaxVerticalDistanceFromArticle)
+        if (l > LinkMaxVerticalDistanceFromArticle)
             return 0;
-        var a = Math.max(0, Math.max(o.left - (s.left + s.width), s.left - (o.left + o.width)));
-        if (a > 0)
+        var o = Math.max(0, Math.max(a.left - (r.left + r.width), r.left - (a.left + a.width)));
+        if (o > 0)
             return 0;
-        var f = i.pathname, l = t.pathname;
+        var s = n.pathname,
+            c = e.pathname;
         if (this.prefixWithDateForNextPageURL) {
-            if (t.pathname.indexOf(this.prefixWithDateForNextPageURL)===-1)
+            if (-1 === e.pathname.indexOf(this.prefixWithDateForNextPageURL))
                 return 0;
-            f = f.substring(this.prefixWithDateForNextPageURL.length), l = l.substring(this.prefixWithDateForNextPageURL.length)
+            s = s.substring(this.prefixWithDateForNextPageURL.length), c = c.substring(this.prefixWithDateForNextPageURL.length)
         }
-        var c = l.substring(1).split("/");
-        c[c.length - 1] || c.pop();
-        var h = c.length, p = f.substring(1).split("/"), d=!1;
-        p[p.length - 1] || (d=!0, p.pop());
-        var v = p.length;
-        if (h < v)
+        var m = c.substring(1).split("/");
+        m[m.length - 1] || m.pop();
+        var h = m.length,
+            d = s.substring(1).split("/"),
+            u = !1;
+        d[d.length - 1] || (u = !0, d.pop());
+        var g = d.length;
+        if (g > h)
             return 0;
-        var m = 0, g = 0, y = t.textContent;
-        for (var b = 0; b < h; ++b) {
-            var w = c[b], E = b < v ? p[b]: "";
-            if (E !== w) {
-                if (b < v - 2)
+        for (var f = 0, p = 0, v = e.textContent, E = 0; h > E; ++E) {
+            var N = m[E],
+                S = g > E ? d[E] : "";
+            if (S !== N) {
+                if (g - 2 > E)
                     return 0;
-                if (w.length >= E.length) {
-                    var S = 0;
-                    while (w[w.length - 1 - S] === E[E.length - 1 - S])
-                        S++;
-                    S && (w = w.substring(0, w.length - S), E = E.substring(0, E.length - S));
-                    var x = w.indexOf(E);
-                    x!==-1 && (w = w.substring(x))
+                if (N.length >= S.length) {
+                    for (var A = 0; N[N.length - 1 - A] === S[S.length - 1 - A];)
+                        A++;
+                    A && (N = N.substring(0, N.length - A), S = S.substring(0, S.length - A));
+                    var y = N.indexOf(S);
+                    -1 !== y && (N = N.substring(y))
                 }
-                n(E, w, y, this.pageNumber) ? g = Math.pow(LinkNextOrdinalValueBase, b - h + 1) : m++
+                t(S, N, v, this.pageNumber) ? p = Math.pow(LinkNextOrdinalValueBase, E - h + 1) : f++
             }
-            if (m > 1)
+            if (f > 1)
                 return 0
         }
-        var T=!1;
-        if (t.search) {
-            linkParameters = r(t.search), referenceParameters = r(i.search);
-            for (var N in linkParameters) {
-                var C = linkParameters[N], k = N in referenceParameters ? referenceParameters[N]: null;
-                if (k !== C) {
-                    k === null && (k = ""), C === null && (C = "");
-                    if (C.length < k.length)
-                        m++;
-                    else if (n(k, C, y, this.pageNumber)) {
-                        if (LinkURLSearchParameterKeyMatchRegex.test(N)) {
-                            if (f.toLowerCase() !== l.toLowerCase())
+        var T = !1;
+        if (e.search) {
+            linkParameters = i(e.search), referenceParameters = i(n.search);
+            for (var b in linkParameters) {
+                var C = linkParameters[b],
+                    D = b in referenceParameters ? referenceParameters[b] : null;
+                if (D !== C)
+                    if (null === D && (D = ""), null === C && (C = ""), C.length < D.length)
+                        f++;
+                    else if (t(D, C, v, this.pageNumber)) {
+                        if (LinkURLSearchParameterKeyMatchRegex.test(b)) {
+                            if (s.toLowerCase() !== c.toLowerCase())
                                 return 0;
-                            if (this.isWordPressSite() && d)
+                            if (this.isWordPressSite() && u)
                                 return 0;
-                            T=!0
+                            T = !0
                         }
-                        if (LinkURLBadSearchParameterKeyMatchRegex.test(N)) {
-                            m++;
+                        if (LinkURLBadSearchParameterKeyMatchRegex.test(b)) {
+                            f++;
                             continue
                         }
-                        g = Math.max(g, 1 / LinkNextOrdinalValueBase)
+                        p = Math.max(p, 1 / LinkNextOrdinalValueBase)
                     } else
-                        m++
-                }
+                        f++
             }
         }
-        if (!g)
+        if (!p)
             return 0;
-        if (LinkURLPageSlashNumberMatchRegex.test(t.href) || LinkURLSlashDigitEndMatchRegex.test(t.href))
-            T=!0;
-        if (!T && h === v && stringSimilarity(f, l) < LinkMinimumURLSimilarityRatio)
+        if ((LinkURLPageSlashNumberMatchRegex.test(e.href) || LinkURLSlashDigitEndMatchRegex.test(e.href)) && (T = !0), !T && h === g && stringSimilarity(s, c) < LinkMinimumURLSimilarityRatio)
             return 0;
-        if (LinkURLArchiveSlashDigitEndMatchRegex.test(t))
+        if (LinkURLArchiveSlashDigitEndMatchRegex.test(e))
             return 0;
-        var L = LinkMatchWeight * (Math.pow(LinkMismatchValueBase, - m) + g) + LinkVerticalDistanceFromArticleWeight * u / LinkMaxVerticalDistanceFromArticle;
-        T && (L += LinkURLSemanticMatchBonus), t.parentNode.tagName === "LI" && (L += LinkListItemBonus);
-        var y = t.innerText;
-        return LinkNextMatchRegEx.test(y) && (L += LinkNextMatchBonus), LinkPageMatchRegEx.test(y) && (L += LinkPageMatchBonus), LinkContinueMatchRegEx.test(y) && (L += LinkContinueMatchBonus), L
+        var x = LinkMatchWeight * (Math.pow(LinkMismatchValueBase, -f) + p) + LinkVerticalDistanceFromArticleWeight * l / LinkMaxVerticalDistanceFromArticle;
+        T && (x += LinkURLSemanticMatchBonus), "LI" === e.parentNode.tagName && (x += LinkListItemBonus);
+        var v = e.innerText;
+        return LinkNextMatchRegEx.test(v) && (x += LinkNextMatchBonus), LinkPageMatchRegEx.test(v) && (x += LinkPageMatchBonus), LinkContinueMatchRegEx.test(v) && (x += LinkContinueMatchBonus), x
     },
-    elementContainsEnoughTextOfSameStyle: function(t) {
-        function o(e, t) {
-            function u(e) {
-                var t = e.children[0];
-                if (t) {
-                    var n = t.children, r = n.length;
-                    for (var i = 0; i < r; ++i)
-                        if (getComputedStyle(n[i]).float !== "none")
-                            return !1
-                }
-                return !0
-            }
-            function a(e, i) {
-                if (e.nodeType === Node.TEXT_NODE) {
-                    /\S/.test(e.nodeValue) && r.push(e);
-                    return
-                }
-                if (e.nodeType !== Node.ELEMENT_NODE)
-                    return;
-                if (!isElementVisible(e))
-                    return;
-                if (t&&++n > t)
-                    return;
-                if (e._evaluatedForTextContent)
-                    return;
-                var f = e.tagName;
-                if (f === "IFRAME" || f === "FORM")
-                    return;
-                o[f] ? i-- : (f === "UL" || f === "OL") && u(e) && i--;
-                var l = i + 1;
-                if (l < s) {
-                    var c = e.childNodes, h = c.length;
-                    for (var p = 0; p < h; ++p)
-                        a(c[p], l)
-                }
-            }
-            var n = 0, r = [], o = {
-                P: 1,
-                STRONG: 1,
-                B: 1,
-                EM: 1,
-                I: 1,
-                SPAN: 1
-            };
-            return i && (o.CENTER = 1, o.FONT = 1), a(e, 0), r
-        }
-        const n = 110, r = 1800;
-        var i = t.tagName === "BODY", s = i ? 2: 3, u = o(t, n), a = r / scoreMultiplierForElementTagNameAndAttributes(t) / languageScoreMultiplierForTextNodes(u), f = {}, l = u.length;
-        for (var c = 0; c < l; ++c) {
-            var h = u[c], p = h.length, d = h.parentElement, v = window.getComputedStyle(d), m = v.fontFamily + "|" + v.fontSize, g = Math.pow(p, TextNodeLengthPower);
-            if (f[m]) {
-                if ((f[m] += g) > a)
+    elementContainsEnoughTextOfSameStyle: function(e, t, i) {
+        const n = 110;
+        for (var r = "BODY" === e.tagName, a = r ? 2 : 3, l = getVisibleNonWhitespaceTextNodes(e, a, n, r, t), o = i / scoreMultiplierForElementTagNameAndAttributes(e) / languageScoreMultiplierForTextNodes(l), s = {}, c = l.length, m = 0; c > m; ++m) {
+            var h = l[m],
+                d = h.length,
+                u = h.parentElement,
+                g = window.getComputedStyle(u),
+                f = g.fontFamily + "|" + g.fontSize,
+                p = Math.pow(d, TextNodeLengthPower);
+            if (s[f]) {
+                if ((s[f] += p) > o)
                     break
             } else
-                f[m] = g
+                s[f] = p
         }
-        for (var m in f)
-            if (f[m] > a)
+        for (var f in s)
+            if (s[f] > o)
                 return !0;
         return !1
     },
-    pointsToUseForHitTesting: function() {
-        const t = window.innerWidth, n = t / 4, r = t / 2, i = 128, s = 320;
-        return [[r, 800], [r, 600], [n, 800], [r, 400], [r - i, 1100], [s, 700], [3 * n, 800], [t - s, 700], [r - i, 1300]]
+    openGraphMetadataClaimsPageTypeIsArticle: function() {
+        if (!this._openGraphMetadataClaimsPageTypeIsArticle) {
+            var e = this.contentDocument.querySelector("head meta[property='og:type']");
+            this._openGraphMetadataClaimsPageTypeIsArticle = e && "article" === e.content
+        }
+        return this._openGraphMetadataClaimsPageTypeIsArticle
     },
-    clearVisualExaminationState: function() {
-        var t = this._elementsEvaluatedForTextContent.length;
-        for (var n = 0; n < t; ++n)
-            delete this._elementsEvaluatedForTextContent[n]._evaluatedForTextContent;
-        this._elementsEvaluatedForTextContent = []
+    pointsToUseForHitTesting: function() {
+        const e = window.innerWidth,
+            t = e / 4,
+            i = e / 2,
+            n = 128,
+            r = 320;
+        var a = [[i, 800], [i, 600], [t, 800], [i, 400], [i - n, 1100], [r, 700], [3 * t, 800], [e - r, 700]];
+        return this.openGraphMetadataClaimsPageTypeIsArticle() && a.push([i - n, 1400]), a
     },
     findArticleByVisualExamination: function() {
-        this.clearVisualExaminationState();
-        var t = this.pointsToUseForHitTesting(), n = t.length;
-        for (var r = 0; r < n; r++) {
-            var i = t[r][0], s = t[r][1], o = elementAtPoint(i, s);
-            for (var u = o; u; u = u.parentElement) {
-                if (u._evaluatedForTextContent)
-                    break;
-                if (VeryPositiveClassNameRegEx.test(u.className))
-                    return new CandidateElement(u, this.contentDocument);
-                if (CandidateTagNamesToIgnore[u.tagName])
-                    continue;
-                var a = u.offsetWidth, f = u.offsetHeight;
-                if (!a&&!f) {
-                    var l = cachedElementBoundingRect(u);
-                    a = l.width, f = l.height
+        for (var e = new Set, t = this.pointsToUseForHitTesting(), i = t.length, n = AppleDotComAndSubdomainsRegex.test(this.contentDocument.location.hostname.toLowerCase()) ? 7200 : 1800, r = 0; i > r; r++)
+            for (var a = t[r][0], l = t[r][1], o = elementAtPoint(a, l), s = o; s && !e.has(s); s = s.parentElement) {
+                if (VeryPositiveClassNameRegEx.test(s.className))
+                    return new CandidateElement(s, this.contentDocument);
+                if (!CandidateTagNamesToIgnore[s.tagName]) {
+                    var c = s.offsetWidth,
+                        m = s.offsetHeight;
+                    if (!c && !m) {
+                        var h = cachedElementBoundingRect(s);
+                        c = h.width, m = h.height
+                    }
+                    if (!(c < CandidateMinimumWidth || m < CandidateMinimumHeight || c * m < CandidateMinimumArea)) {
+                        var d = this.elementContainsEnoughTextOfSameStyle(s, e, n);
+                        if (e.add(s), d && !(CandidateElement.candidateElementAdjustedHeight(s) < CandidateMinimumHeight)) {
+                            var u = new CandidateElement(s, this.contentDocument);
+                            if (u.shouldDisqualifyDueToSimilarElements())
+                                return null;
+                            if (u.shouldDisqualifyDueToHorizontalRuleDensity())
+                                return null;
+                            if (u.shouldDisqualifyDueToHeaderDensity())
+                                return null;
+                            if (!u.shouldDisqualifyForDeepLinking())
+                                return u
+                        }
+                    }
                 }
-                if (a < CandidateMinimumWidth || f < CandidateMinimumHeight || a * f < CandidateMinimumArea)
-                    continue;
-                var c = this.elementContainsEnoughTextOfSameStyle(u);
-                u._evaluatedForTextContent=!0, this._elementsEvaluatedForTextContent.push(u);
-                if (!c)
-                    continue;
-                if (CandidateElement.candidateElementAdjustedHeight(u) < CandidateMinimumHeight)
-                    continue;
-                var h = new CandidateElement(u, this.contentDocument);
-                if (h.shouldDisqualifyDueToSimilarElements())
-                    return null;
-                if (h.shouldDisqualifyDueToHorizontalRuleDensity())
-                    return null;
-                if (h.shouldDisqualifyDueToHeaderDensity())
-                    return null;
-                if (h.shouldDisqualifyForDeepLinking())
-                    continue;
-                return h
             }
+        return null
+    },
+    findArticleFromMetadata: function(e) {
+        var t = document.querySelectorAll(SchemaDotOrgArticleContainerSelector);
+        if (1 === t.length) {
+            if (e === FindArticleMode.ExistenceOfElement)
+                return !0;
+            var i = t[0];
+            if (i.matches("article, *[itemprop=articleBody]"))
+                return new CandidateElement(i, this.contentDocument);
+            var n = i.querySelectorAll("article, *[itemprop=articleBody]"),
+                r = elementWithLargestAreaFromElements(n);
+            return r ? new CandidateElement(r, this.contentDocument) : new CandidateElement(i, this.contentDocument)
+        }
+        if (this.openGraphMetadataClaimsPageTypeIsArticle()) {
+            var a = this.contentDocument.querySelectorAll("main article"),
+                l = elementWithLargestAreaFromElements(a);
+            if (l)
+                return e === FindArticleMode.ExistenceOfElement ? !0 : new CandidateElement(l, this.contentDocument);
+            var o = this.contentDocument.querySelectorAll("article");
+            if (1 === o.length)
+                return e === FindArticleMode.ExistenceOfElement ? !0 : new CandidateElement(o[0], this.contentDocument)
         }
         return null
     },
@@ -1970,47 +2635,72 @@ CandidateElement = function(e, t) {
         return this._articleTextContent
     },
     pageDescription: function() {
-        var t = this.contentDocument.querySelectorAll("head meta[name]"), n = t.length;
-        for (var r = 0; r < n; ++r) {
-            var i = t[r];
-            if (i.getAttribute("name").toLowerCase() === "description") {
-                var s = i.getAttribute("content");
-                if (s)
-                    return s.trim()
-                }
+        for (var e = this.contentDocument.querySelectorAll("head meta[name]"), t = e.length, i = 0; t > i; ++i) {
+            var n = e[i];
+            if ("description" === n.getAttribute("name").toLowerCase()) {
+                var r = n.getAttribute("content");
+                if (r)
+                    return r.trim()
+            }
         }
         return null
     },
     articleTitleAndSiteNameFromTitleString: function(e) {
-        const t = [" - ", " \u2013 ", " \u2014 ", ": ", " | ", " \u00bb "], n = t.length, r = .6;
-        var i = this.contentDocument.location.host, s = i.replace(/^(www|m)\./, ""), o = s.replace(/\.(com|info|net|org|edu)$/, "").toLowerCase(), u, a;
-        for (var f = 0; f < n; ++f) {
-            var l = e.split(t[f]);
-            if (l.length !== 2)
-                continue;
-            var c = l[0].trim(), h = l[1].trim(), p = c.toLowerCase(), d = h.toLowerCase(), v = Math.max(stringSimilarity(p, s), stringSimilarity(p, o)), m = Math.max(stringSimilarity(d, s), stringSimilarity(d, o)), g = Math.max(v, m);
-            if (!a || g > a)
-                a = g, v > m ? u = {
-                    siteName: c,
-                    articleTitle: h
-                } : u = {
+        const t = [" - ", " \u2013 ", " \u2014 ", ": ", " | ", " \xbb "],
+            i = t.length,
+            n = .6;
+        for (var r, a, l = this.contentDocument.location.host, o = l.replace(/^(www|m)\./, ""), s = o.replace(/\.(com|info|net|org|edu)$/, "").toLowerCase(), c = 0; i > c; ++c) {
+            var m = e.split(t[c]);
+            if (2 === m.length) {
+                var h = m[0].trim(),
+                    d = m[1].trim(),
+                    u = h.toLowerCase(),
+                    g = d.toLowerCase(),
+                    f = Math.max(stringSimilarity(u, o), stringSimilarity(u, s)),
+                    p = Math.max(stringSimilarity(g, o), stringSimilarity(g, s)),
+                    v = Math.max(f, p);
+                (!a || v > a) && (a = v, r = f > p ? {
                     siteName: h,
-                    articleTitle: c
-                }
+                    articleTitle: d
+                } : {
+                    siteName: d,
+                    articleTitle: h
+                })
+            }
         }
-        return u && a >= r ? u : null
+        return r && a >= n ? r : null
+    },
+    pageMetadata: function(e, t) {
+        var i,
+            n = this.pageDescription(),
+            r = !1;
+        this.adoptableArticle() ? (i = this.articleTitle(), n = n || this.articleTextContent(), r = !0) : (i = this.contentDocument.title, this.contentDocument.body && (n = n || this.contentDocument.body.innerText));
+        var a = "",
+            l = this.pageImageURLFromMetadata();
+        if (l)
+            a = l;
+        else {
+            var o = this.mainImageNode();
+            o && (a = o.src)
+        }
+        i || (i = userVisibleURLString(this.contentDocument.location.href)), i = i.trim(), e && (i = i.substring(0, e));
+        var s = this.contentFromUniqueMetadataSelector(this.contentDocument, "head meta[property='og:site_name']");
+        if (!s) {
+            var c = this.articleTitleAndSiteNameFromTitleString(this.contentDocument.title);
+            c && c.articleTitle === i && (s = c.siteName)
+        }
+        return s || (s = ""), n = n ? n.trim() : "", t && (n = n.substring(0, t)), n = n.replace(/[\s]+/g, " "), {
+            title: i,
+            previewText: n,
+            siteName: s,
+            mainImageURL: a,
+            isReaderAvailable: r
+        }
     },
     readingListItemInformation: function() {
-        const t = 220, n = 220;
-        var r, i = this.pageDescription(), s=!1;
-        this.adoptableArticle() ? (r = this.articleTitle(), i = i || this.articleTextContent(), s=!0) : (r = this.contentDocument.title, this.contentDocument.body && (i = i || this.contentDocument.body.innerText));
-        var o = "", u = this.mainImageNode();
-        return u && (o = u.src), r || (r = userVisibleURLString(this.contentDocument.location.href)), r = r.trim().substring(0, t), i || (i = ""), i = i.trim().substring(0, n).replace(/[\s]+/g, " "), {
-            title: r,
-            previewText: i,
-            mainImageURL: o,
-            isReaderAvailable: s
-        }
+        const e = 220,
+            t = 220;
+        return this.pageMetadata(e, t)
     }
 };
 var ReaderArticleFinderJS = new ReaderArticleFinder(document);
