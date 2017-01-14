@@ -3,7 +3,7 @@ var path = require('path');
 var webdriver = require('selenium-webdriver');
 var chromeCapabilities = webdriver.Capabilities.chrome();
 var chromeOptions = {
-  'args': ['--test-type', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security']
+  'args': ['--test-type', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security', '--incognito', 'user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"']
 };
 
 chromeCapabilities.set('chromeOptions', chromeOptions);
@@ -16,11 +16,10 @@ module.exports = function(url, cb) {
       return cb(error);
     }
 
-    var driver = new webdriver.Builder()
-      .withCapabilities(chromeCapabilities).build();
+    var driver = new webdriver.Builder().withCapabilities(chromeCapabilities).build();
 
-    driver.manage().timeouts().setScriptTimeout(15000);
-    driver.manage().timeouts().pageLoadTimeout(15000);
+    driver.manage().timeouts().setScriptTimeout(120000);
+    driver.manage().timeouts().pageLoadTimeout(60000);
 
     try {
       driver.get(url);
@@ -30,7 +29,6 @@ module.exports = function(url, cb) {
         script.type = 'text/javascript';
         script.text = jsCode;
         head.appendChild(script);
-
         if ("undefined" != typeof ReaderArticleFinderJS && ReaderArticleFinderJS.isReaderModeAvailable()) {
           var article = ReaderArticleFinderJS.adoptableArticle();
           var title = ReaderArticleFinderJS.articleTitle();
@@ -54,7 +52,6 @@ module.exports = function(url, cb) {
       console.log("Driver quit on success");
       return cb(finalResult);
     });
-
+    
   });
-
 };
