@@ -7,6 +7,7 @@ var chromeOptions = {
 };
 
 chromeCapabilities.set('chromeOptions', chromeOptions);
+chromeCapabilities.set('unexpectedAlertBehavior', 'dismiss');
 
 module.exports = function(url, cb) {
   var finalResult = {};
