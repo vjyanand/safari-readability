@@ -3,7 +3,7 @@ var path = require('path');
 var webdriver = require('selenium-webdriver');
 var chromeCapabilities = webdriver.Capabilities.chrome();
 var chromeOptions = {
-  'args': ['--test-type', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security', '--incognito', 'user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"']
+  'args': ['--test-type', '--headless', '--disable-gpu', '--start-maximized', '--allow-running-insecure-content', '--disable-web-security', '--incognito', 'user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"']
 };
 
 chromeCapabilities.set('chromeOptions', chromeOptions);
